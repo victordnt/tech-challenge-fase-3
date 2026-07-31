@@ -1,80 +1,48 @@
 # Tech Challenge Fase 3
 
-Este projeto é uma aplicação mobile em React Native com Expo Router para o Tech Challenge Fase 3, com foco em gerenciamento financeiro pessoal.
+Aplicação mobile de gerenciamento financeiro pessoal em React Native com Expo Router.
 
-## Objetivo do projeto
-O app deve permitir:
-- autenticação de usuários;
-- cadastro e edição de transações;
-- listagem com filtros;
-- dashboard com resumo financeiro;
-- upload de recibos;
-- integração com Firebase;
-- testes automatizados.
+## Como iniciar
 
-## Tecnologias principais
-- Expo Router
-- React Native
-- TypeScript
-- Context API
-- Firebase Authentication
-- Firestore
-- Firebase Storage
-- Reanimated / Animated
-- Jest + React Native Testing Library
-
-## Estrutura inicial do projeto
-```text
-src/
-  app/
-  components/
-  constants/
-  contexts/
-  hooks/
-  services/
-  types/
-  utils/
-```
-
-## Como rodar localmente
 1. Instale as dependências:
-
 ```bash
 npm install
 ```
 
-2. Inicie o projeto:
+2. Inicie o projeto com a opção desejada:
 
-```bash
-npx expo start
+   **Navegador web (padrão):**
+   ```bash
+   npx expo start --web
+   ```
+
+   **Android emulator:**
+   ```bash
+   npx expo start --android
+   ```
+
+   **iOS simulator (macOS):**
+   ```bash
+   npx expo start --ios
+   ```
+
+   **Expo Go (mobile):**
+   ```bash
+   npx expo start
+   ```
+   E escaneie o QR code com o app Expo Go
+
+## Estrutura de arquivos
+
+```
+src/
+├── app/              # Rotas e telas principais
+├── components/       # Componentes reutilizáveis
+├── constants/        # Constantes da aplicação
+├── contexts/         # Context API (app, auth, transactions)
+├── hooks/            # Hooks customizados
+├── services/         # Serviços (auth, finance, firebase)
+├── types/            # Tipos TypeScript
+└── global.css        # Estilos globais
 ```
 
-3. Escolha uma opção de execução:
-- Android emulator
-- iOS simulator
-- Expo Go
-- navegador web
-
-## Arquitetura inicial implementada
-Até o momento, a base do projeto já inclui:
-- modelos de domínio para transações, usuários, recibos e resumo financeiro;
-- contextos globais para app e transações;
-- serviço de cálculo e filtro de transações;
-- tela inicial de dashboard com estrutura preparada para evolução.
-
-## Próximos passos sugeridos
-1. Implementar autenticação com Firebase.
-2. Criar telas públicas de login e cadastro.
-3. Proteger rotas privadas.
-4. Persistir transações no Firestore.
-5. Integrar upload de recibos no Firebase Storage.
-6. Adicionar testes automatizados.
-
-## Documentação complementar
-- Guia técnico: [GUIDE_TECNICO_DESENVOLVIMENTO.md](GUIDE_TECNICO_DESENVOLVIMENTO.md)
-- Plano do desafio: [PLANO_TECH_CHALLENGE_FASE3.md](PLANO_TECH_CHALLENGE_FASE3.md)
-
-## Observações importantes
-- Não trocar as tecnologias base do desafio sem necessidade.
-- Seguir o desenvolvimento por fases.
-- Manter organização por domínio para facilitar a evolução do projeto.
