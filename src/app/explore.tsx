@@ -1,5 +1,7 @@
+import { auth } from "@/services/firebase/config";
 import { Image } from 'expo-image';
 import { SymbolView } from 'expo-symbols';
+import { useEffect } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -31,6 +33,11 @@ export default function TabTwoScreen() {
       paddingBottom: Spacing.four,
     },
   });
+
+  useEffect(() => {
+    console.log("Firebase project:", auth.app.options.projectId);
+    console.log("Firebase auth domain:", auth.app.options.authDomain);
+  }, []);
 
   return (
     <ScrollView
