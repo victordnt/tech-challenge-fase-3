@@ -1,11 +1,13 @@
+import { useRouter } from 'expo-router';
 import { useEffect, useMemo } from 'react';
-import { StyleSheet, useColorScheme } from 'react-native';
+import { Alert, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useAppContext } from '@/contexts/app-context';
+import { useAuth } from '@/contexts/auth-context';
 import { useTransactions } from '@/contexts/transactions-context';
 import { calculateDashboardSummary, filterTransactions } from '@/services/finance';
 import { auth } from '@/services/firebase/config';
@@ -16,6 +18,8 @@ export default function DashboardScreen() {
     const colors = Colors[validColorScheme];
     const { isLoading } = useAppContext();
     const { transactions, filters } = useTransactions();
+    const { signOut } = useAuth();
+    const router = useRouter();
 
     const filteredTransactions = useMemo(() => filterTransactions(transactions, filters), [transactions, filters]);
     const summary = useMemo(() => calculateDashboardSummary(filteredTransactions), [filteredTransactions]);
@@ -25,14 +29,48 @@ export default function DashboardScreen() {
         console.log("Firebase auth domain:", auth.app.options.authDomain);
     }, []);
 
+    const handleLogout = () => {
+        Alert.alert(
+            'Sair',
+            'Tem certeza que deseja sair da sua conta?',
+            [
+                {
+                    text: 'Cancelar',
+                    onPress: () => { },
+                    style: 'cancel',
+                },
+                {
+                    text: 'Sair',
+                    onPress: async () => {
+                        try {
+                            await signOut();
+                            router.replace('/login');
+                        } catch (error) {
+                            Alert.alert('Erro', 'Erro ao sair da conta');
+                        }
+                    },
+                    style: 'destructive',
+                },
+            ],
+        );
+    };
+
     return (
         <SafeAreaView style={styles.safeArea}>
             <ThemedView style={styles.container}>
                 <ThemedView style={styles.header}>
-                    <ThemedText type="title" style={styles.headerTitle}>Meu Patrimônio</ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
-                        {isLoading ? 'Carregando...' : 'Visão geral de receitas e despesas'}
-                    </ThemedText>
+                    <ThemedView style={{ flex: 1, backgroundColor: 'transparent' }}>
+                        <ThemedText type="title" style={styles.headerTitle}>Meu Patrimônio</ThemedText>
+                        <ThemedText type="small" themeColor="textSecondary">
+                            {isLoading ? 'Carregando...' : 'Visão geral de receitas e despesas'}
+                        </ThemedText>
+                    </ThemedView>
+                    <TouchableOpacity
+                        onPress={handleLogout}
+                        style={[styles.logoutButton, { borderColor: colors.danger }]}
+                    >
+                        <ThemedText style={[styles.logoutButtonText, { color: colors.danger }]}>Sair</ThemedText>
+                    </TouchableOpacity>
                 </ThemedView>
 
                 <ThemedView style={[styles.balanceCard, { backgroundColor: colors.primary }]}>
@@ -83,10 +121,23 @@ const styles = StyleSheet.create({
     header: {
         backgroundColor: 'transparent',
         gap: 8,
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
     },
     headerTitle: {
         fontSize: 32,
         fontWeight: '700',
+    },
+    logoutButton: {
+        borderWidth: 1.5,
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+    },
+    logoutButtonText: {
+        fontSize: 14,
+        fontWeight: '600',
     },
     balanceCard: {
         padding: 24,
