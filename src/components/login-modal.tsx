@@ -1,15 +1,14 @@
 import { Colors } from '@/constants/theme';
+import { useAppContext } from '@/contexts/app-context';
 import { useState } from 'react';
 import {
     ActivityIndicator,
-    ColorSchemeName,
     KeyboardAvoidingView,
     Platform,
     Pressable,
     Text,
     TextInput,
     TouchableOpacity,
-    useColorScheme,
     View
 } from 'react-native';
 
@@ -19,8 +18,8 @@ interface LoginModalProps {
 }
 
 export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
-    const colorScheme = (useColorScheme() || 'light') as ColorSchemeName;
-    const theme = Colors[colorScheme];
+    const { theme: appTheme } = useAppContext();
+    const theme = Colors[appTheme];
 
     const [isSignUp, setIsSignUp] = useState(false);
     const [email, setEmail] = useState('');

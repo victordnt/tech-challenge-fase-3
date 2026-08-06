@@ -14,6 +14,12 @@ export type ColorScheme = {
   warning: string;
   border: string;
   shadow: string;
+  neon?: string;
+  neonAccent?: string;
+  neonGlow?: string;
+  lilac?: string;
+  lilacAccent?: string;
+  lilacGlow?: string;
 };
 
 let _colors: { light: ColorScheme; dark: ColorScheme; unspecified: ColorScheme } = {
@@ -29,6 +35,9 @@ let _colors: { light: ColorScheme; dark: ColorScheme; unspecified: ColorScheme }
     warning: '#F59E0B',
     border: '#E5E7EB',
     shadow: 'rgba(0, 0, 0, 0.08)',
+    lilac: '#C084FC',
+    lilacAccent: '#E879F9',
+    lilacGlow: 'rgba(224, 121, 249, 0.3)',
   },
   dark: {
     text: '#F3F4F6',
@@ -42,6 +51,9 @@ let _colors: { light: ColorScheme; dark: ColorScheme; unspecified: ColorScheme }
     warning: '#FBBF24',
     border: '#475569',
     shadow: 'rgba(0, 0, 0, 0.3)',
+    neon: '#A855F7',
+    neonAccent: '#EC4899',
+    neonGlow: 'rgba(168, 85, 247, 0.5)',
   },
   unspecified: {} as ColorScheme,
 };

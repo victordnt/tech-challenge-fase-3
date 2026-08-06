@@ -1,13 +1,6 @@
 export type TransactionType = 'income' | 'expense';
 
-export type TransactionCategory =
-  | 'Salary'
-  | 'Food'
-  | 'Transport'
-  | 'Utilities'
-  | 'Health'
-  | 'Entertainment'
-  | 'Other';
+export type TransactionCategory = string;
 
 export interface User {
   id: string;
@@ -38,10 +31,10 @@ export interface DashboardSummary {
   totalIncome: number;
   totalExpense: number;
   balance: number;
-  categories: Array<{
+  categories: {
     category: TransactionCategory;
     total: number;
-  }>;
+  }[];
 }
 
 export interface TransactionFilters {

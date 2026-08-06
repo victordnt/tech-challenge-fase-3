@@ -1,32 +1,44 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo } from 'react';
-import { Alert, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, TouchableOpacity, useColorScheme, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { PaginationFooter } from '@/components/pagination-footer';
+import { SummaryCards } from '@/components/summary-cards';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { TransactionButton } from '@/components/transaction-button';
+import { TransactionList } from '@/components/transaction-list';
+import { TransactionModal } from '@/components/transaction-modal';
 import { Colors } from '@/constants/theme';
-import { useAppContext } from '@/contexts/app-context';
 import { useAuth } from '@/contexts/auth-context';
 import { useTransactions } from '@/contexts/transactions-context';
 import { calculateDashboardSummary, filterTransactions } from '@/services/finance';
 import { auth } from '@/services/firebase/config';
+import type { Transaction } from '@/types/finance';
 
 export default function DashboardScreen() {
     const colorScheme = useColorScheme();
     const validColorScheme = colorScheme === 'dark' ? 'dark' : 'light';
     const colors = Colors[validColorScheme];
-    const { isLoading } = useAppContext();
-    const { transactions, filters } = useTransactions();
+    const { transactions, filters, currentPage, setCurrentPage, itemsPerPage, loading: transactionsLoading } = useTransactions();
     const { signOut } = useAuth();
     const router = useRouter();
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+    const { deleteTransaction } = useTransactions();
 
     const filteredTransactions = useMemo(() => filterTransactions(transactions, filters), [transactions, filters]);
     const summary = useMemo(() => calculateDashboardSummary(filteredTransactions), [filteredTransactions]);
 
+    // Paginação
+    const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedTransactions = filteredTransactions.slice(startIndex, startIndex + itemsPerPage);
+
     useEffect(() => {
         console.log("Firebase project:", auth.app.options.projectId);
-        console.log("Firebase auth domain:", auth.app.options.authDomain);
     }, []);
 
     const handleLogout = () => {
@@ -46,7 +58,8 @@ export default function DashboardScreen() {
                             await signOut();
                             router.replace('/login');
                         } catch (error) {
-                            Alert.alert('Erro', 'Erro ao sair da conta');
+                            const errorMessage = error instanceof Error ? error.message : 'Erro ao sair da conta';
+                            Alert.alert('Erro', errorMessage);
                         }
                     },
                     style: 'destructive',
@@ -55,55 +68,90 @@ export default function DashboardScreen() {
         );
     };
 
+    const handleEdit = (transaction: Transaction) => {
+        setEditingTransaction(transaction);
+        setIsModalVisible(true);
+    };
+
+    const handleDelete = async (transactionId: string) => {
+        try {
+            await deleteTransaction(transactionId);
+            Alert.alert('Sucesso', 'Transação excluída com sucesso!');
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Erro ao excluir transação';
+            Alert.alert('Erro', errorMessage);
+        }
+    };
+
+    const neonColor = colorScheme === 'dark' ? (colors.neon || '#A855F7') : (colors.lilac || '#C084FC');
+
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <ThemedView style={styles.container}>
-                <ThemedView style={styles.header}>
-                    <ThemedView style={{ flex: 1, backgroundColor: 'transparent' }}>
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+            <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
+                {/* Header */}
+                <ThemedView style={[styles.header, { backgroundColor: 'transparent' }]}>
+                    <ThemedView style={[styles.headerLeft, { backgroundColor: 'transparent' }]}>
                         <ThemedText type="title" style={styles.headerTitle}>Meu Patrimônio</ThemedText>
                         <ThemedText type="small" themeColor="textSecondary">
-                            {isLoading ? 'Carregando...' : 'Visão geral de receitas e despesas'}
+                            {transactionsLoading ? 'Carregando transações...' : 'Controle de entradas e saídas'}
                         </ThemedText>
                     </ThemedView>
-                    <TouchableOpacity
-                        onPress={handleLogout}
-                        style={[styles.logoutButton, { borderColor: colors.danger }]}
-                    >
-                        <ThemedText style={[styles.logoutButtonText, { color: colors.danger }]}>Sair</ThemedText>
-                    </TouchableOpacity>
-                </ThemedView>
-
-                <ThemedView style={[styles.balanceCard, { backgroundColor: colors.primary }]}>
-                    <ThemedText type="small" style={{ color: '#FFFFFF', opacity: 0.9 }}>Saldo Total</ThemedText>
-                    <ThemedText type="title" style={[styles.balanceAmount, { color: '#FFFFFF' }]}>
-                        R$ {Math.abs(summary.balance).toFixed(2)}
-                    </ThemedText>
-                    <ThemedText type="small" style={[{ color: '#FFFFFF', opacity: 0.8 }, summary.balance < 0 && { color: '#FCA5A5' }]}>
-                        {summary.balance >= 0 ? '✓ Positivo' : '✗ Negativo'}
-                    </ThemedText>
-                </ThemedView>
-
-                <ThemedView style={styles.cardsGrid}>
-                    <ThemedView style={[styles.card, { borderLeftColor: colors.success, borderLeftWidth: 4 }]}>
-                        <ThemedView style={styles.cardHeader}>
-                            <ThemedText type="small" themeColor="textSecondary" style={styles.cardLabel}>Receitas</ThemedText>
-                            <ThemedText style={[styles.cardAmount, { color: colors.success }]}>+</ThemedText>
-                        </ThemedView>
-                        <ThemedText type="title" style={styles.cardValue}>
-                            R$ {summary.totalIncome.toFixed(2)}
-                        </ThemedText>
-                    </ThemedView>
-
-                    <ThemedView style={[styles.card, { borderLeftColor: colors.danger, borderLeftWidth: 4 }]}>
-                        <ThemedView style={styles.cardHeader}>
-                            <ThemedText type="small" themeColor="textSecondary" style={styles.cardLabel}>Despesas</ThemedText>
-                            <ThemedText style={[styles.cardAmount, { color: colors.danger }]}>−</ThemedText>
-                        </ThemedView>
-                        <ThemedText type="title" style={styles.cardValue}>
-                            R$ {summary.totalExpense.toFixed(2)}
-                        </ThemedText>
+                    <ThemedView style={[styles.headerRight, { backgroundColor: 'transparent' }]}>
+                        <ThemeToggle />
+                        <TouchableOpacity
+                            onPress={handleLogout}
+                            style={[styles.logoutButton, { borderColor: colors.danger }]}
+                        >
+                            <ThemedText style={[styles.logoutButtonText, { color: colors.danger }]}>Sair</ThemedText>
+                        </TouchableOpacity>
                     </ThemedView>
                 </ThemedView>
+
+                {transactionsLoading ? (
+                    <View style={[styles.loadingContainer, { backgroundColor: 'transparent' }]}>
+                        <ActivityIndicator size="large" color={neonColor} />
+                        <ThemedText type="small" style={{ marginTop: 12 }}>Carregando suas transações...</ThemedText>
+                    </View>
+                ) : (
+                    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+                        {/* Summary Cards */}
+                        <SummaryCards
+                            totalIncome={summary.totalIncome}
+                            totalExpense={summary.totalExpense}
+                            balance={summary.balance}
+                        />
+
+                        {/* Transactions List */}
+                        <ThemedText type="title" style={styles.listTitle}>Transações</ThemedText>
+                        <TransactionList
+                            transactions={paginatedTransactions}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                        />
+
+                        {/* Pagination */}
+                        {totalPages > 1 && (
+                            <PaginationFooter
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={setCurrentPage}
+                            />
+                        )}
+                    </ScrollView>
+                )}
+
+                {/* FAB Button */}
+                <TransactionButton onPress={() => setIsModalVisible(true)} />
+
+                {/* Transaction Modal */}
+                <TransactionModal
+                    visible={isModalVisible}
+                    editingTransaction={editingTransaction}
+                    onClose={() => {
+                        setIsModalVisible(false);
+                        setEditingTransaction(null);
+                    }}
+                />
             </ThemedView>
         </SafeAreaView>
     );
@@ -115,21 +163,30 @@ const styles = StyleSheet.create({
     },
     container: {
         flex: 1,
-        padding: 20,
-        gap: 24,
     },
     header: {
-        backgroundColor: 'transparent',
-        gap: 8,
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        gap: 12,
         flexDirection: 'row',
         alignItems: 'flex-start',
         justifyContent: 'space-between',
     },
+    headerLeft: {
+        flex: 1,
+        gap: 4,
+    },
+    headerRight: {
+        flexDirection: 'row',
+        gap: 12,
+        alignItems: 'center',
+    },
     headerTitle: {
-        fontSize: 32,
+        fontSize: 28,
         fontWeight: '700',
     },
     logoutButton: {
+        marginHorizontal: 20,
         borderWidth: 1.5,
         borderRadius: 8,
         paddingHorizontal: 12,
@@ -139,51 +196,20 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
     },
-    balanceCard: {
-        padding: 24,
-        borderRadius: 16,
-        gap: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-        elevation: 5,
-    },
-    balanceAmount: {
-        fontSize: 36,
-        fontWeight: '700',
-    },
-    cardsGrid: {
-        gap: 12,
-        backgroundColor: 'transparent',
-    },
-    card: {
-        padding: 20,
-        borderRadius: 14,
-        gap: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    cardHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'transparent',
+        gap: 12,
     },
-    cardLabel: {
-        fontSize: 13,
-        fontWeight: '500',
+    scrollContent: {
+        paddingHorizontal: 20,
+        paddingBottom: 120,
+        gap: 20,
     },
-    cardAmount: {
-        fontSize: 20,
-        fontWeight: '600',
-    },
-    cardValue: {
-        fontSize: 24,
+    listTitle: {
+        fontSize: 18,
         fontWeight: '700',
-        marginTop: 4,
+        marginTop: 12,
     },
 });

@@ -9,7 +9,7 @@ export function calculateDashboardSummary(transactions: Transaction[]): Dashboar
     .filter((item) => item.type === 'expense')
     .reduce((sum, item) => sum + item.amount, 0);
 
-  const categories = transactions.reduce<Array<{ category: Transaction['category']; total: number }>>(
+  const categories = transactions.reduce<{ category: Transaction['category']; total: number }[]>(
     (acc, item) => {
       const existing = acc.find((entry) => entry.category === item.category);
 
