@@ -1,8 +1,11 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo } from 'react';
-import { Alert, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, TouchableOpacity, useColorScheme, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { v4 as uuidv4 } from 'uuid';
 
+import { AddTransactionModal } from '@/components/add-transaction-modal';
+import { ConfirmationModal } from '@/components/confirmation-modal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
@@ -17,9 +20,15 @@ export default function DashboardScreen() {
     const validColorScheme = colorScheme === 'dark' ? 'dark' : 'light';
     const colors = Colors[validColorScheme];
     const { isLoading } = useAppContext();
-    const { transactions, filters } = useTransactions();
+    const { transactions, filters, loadUserTransactions } = useTransactions();
     const { signOut } = useAuth();
     const router = useRouter();
+    const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+    const [logoutLoading, setLogoutLoading] = useState(false);
+    const [addTransactionModalVisible, setAddTransactionModalVisible] = useState(false);
+    const [addTransactionLoading, setAddTransactionLoading] = useState(false);
+    const { addTransaction } = useTransactions();
+    const { user } = useAuth();
 
     const filteredTransactions = useMemo(() => filterTransactions(transactions, filters), [transactions, filters]);
     const summary = useMemo(() => calculateDashboardSummary(filteredTransactions), [filteredTransactions]);
@@ -29,82 +38,180 @@ export default function DashboardScreen() {
         console.log("Firebase auth domain:", auth.app.options.authDomain);
     }, []);
 
-    const handleLogout = () => {
-        Alert.alert(
-            'Sair',
-            'Tem certeza que deseja sair da sua conta?',
-            [
-                {
-                    text: 'Cancelar',
-                    onPress: () => { },
-                    style: 'cancel',
-                },
-                {
-                    text: 'Sair',
-                    onPress: async () => {
-                        try {
-                            await signOut();
-                            router.replace('/login');
-                        } catch (error) {
-                            Alert.alert('Erro', 'Erro ao sair da conta');
-                        }
-                    },
-                    style: 'destructive',
-                },
-            ],
-        );
+    // Carregar transações quando o usuário fizer login
+    useEffect(() => {
+        if (user?.uid) {
+            loadUserTransactions(user.uid);
+        }
+    }, [user?.uid, loadUserTransactions]);
+
+    const handleLogoutPress = () => {
+        setLogoutModalVisible(true);
+    };
+
+    const handleLogoutConfirm = async () => {
+        setLogoutLoading(true);
+        try {
+            await signOut();
+            setLogoutModalVisible(false);
+            router.replace('/login');
+        } catch (error) {
+            console.error('Erro ao sair:', error);
+            setLogoutLoading(false);
+            Alert.alert('Erro', 'Erro ao sair da conta');
+        }
+    };
+
+    const handleLogoutCancel = () => {
+        setLogoutModalVisible(false);
+    };
+
+    const handleAddTransaction = async (data: { type: 'income' | 'expense'; amount: number; date: string; title: string }) => {
+        setAddTransactionLoading(true);
+        try {
+            const newTransaction = {
+                id: uuidv4(),
+                userId: user?.uid || 'user-1',
+                type: data.type,
+                amount: data.amount,
+                category: 'Other' as const,
+                description: data.title,
+                date: data.date,
+            };
+            await addTransaction(newTransaction);
+            setAddTransactionModalVisible(false);
+        } catch (error) {
+            console.error('Erro ao adicionar transação:', error);
+            Alert.alert('Erro', 'Erro ao adicionar transação');
+        } finally {
+            setAddTransactionLoading(false);
+        }
     };
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            <ThemedView style={styles.container}>
-                <ThemedView style={styles.header}>
-                    <ThemedView style={{ flex: 1, backgroundColor: 'transparent' }}>
-                        <ThemedText type="title" style={styles.headerTitle}>Meu Patrimônio</ThemedText>
-                        <ThemedText type="small" themeColor="textSecondary">
-                            {isLoading ? 'Carregando...' : 'Visão geral de receitas e despesas'}
-                        </ThemedText>
-                    </ThemedView>
-                    <TouchableOpacity
-                        onPress={handleLogout}
-                        style={[styles.logoutButton, { borderColor: colors.danger }]}
-                    >
-                        <ThemedText style={[styles.logoutButtonText, { color: colors.danger }]}>Sair</ThemedText>
-                    </TouchableOpacity>
-                </ThemedView>
-
-                <ThemedView style={[styles.balanceCard, { backgroundColor: colors.primary }]}>
-                    <ThemedText type="small" style={{ color: '#FFFFFF', opacity: 0.9 }}>Saldo Total</ThemedText>
-                    <ThemedText type="title" style={[styles.balanceAmount, { color: '#FFFFFF' }]}>
-                        R$ {Math.abs(summary.balance).toFixed(2)}
-                    </ThemedText>
-                    <ThemedText type="small" style={[{ color: '#FFFFFF', opacity: 0.8 }, summary.balance < 0 && { color: '#FCA5A5' }]}>
-                        {summary.balance >= 0 ? '✓ Positivo' : '✗ Negativo'}
-                    </ThemedText>
-                </ThemedView>
-
-                <ThemedView style={styles.cardsGrid}>
-                    <ThemedView style={[styles.card, { borderLeftColor: colors.success, borderLeftWidth: 4 }]}>
-                        <ThemedView style={styles.cardHeader}>
-                            <ThemedText type="small" themeColor="textSecondary" style={styles.cardLabel}>Receitas</ThemedText>
-                            <ThemedText style={[styles.cardAmount, { color: colors.success }]}>+</ThemedText>
+            <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+                <ThemedView style={styles.container}>
+                    <ThemedView style={styles.header}>
+                        <ThemedView style={{ flex: 1, backgroundColor: 'transparent' }}>
+                            <ThemedText type="title" style={styles.headerTitle}>Meu Patrimônio</ThemedText>
+                            <ThemedText type="small" themeColor="textSecondary">
+                                {isLoading ? 'Carregando...' : 'Visão geral de receitas e despesas'}
+                            </ThemedText>
                         </ThemedView>
-                        <ThemedText type="title" style={styles.cardValue}>
-                            R$ {summary.totalIncome.toFixed(2)}
+                        <View style={styles.headerButtons}>
+                            <TouchableOpacity
+                                onPress={() => setAddTransactionModalVisible(true)}
+                                style={[styles.addButton, { borderColor: colors.primary }]}
+                            >
+                                <ThemedText style={[styles.addButtonText, { color: colors.primary }]}>+</ThemedText>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={handleLogoutPress}
+                                style={[styles.logoutButton, { borderColor: colors.danger }]}
+                            >
+                                <ThemedText style={[styles.logoutButtonText, { color: colors.danger }]}>Sair</ThemedText>
+                            </TouchableOpacity>
+                        </View>
+                    </ThemedView>
+
+                    <ThemedView style={[styles.balanceCard, { backgroundColor: colors.primary }]}>
+                        <ThemedText type="small" style={{ color: '#FFFFFF', opacity: 0.9 }}>Saldo Total</ThemedText>
+                        <ThemedText type="title" style={[styles.balanceAmount, { color: '#FFFFFF' }]}>
+                            R$ {Math.abs(summary.balance).toFixed(2)}
+                        </ThemedText>
+                        <ThemedText type="small" style={[{ color: '#FFFFFF', opacity: 0.8 }, summary.balance < 0 && { color: '#FCA5A5' }]}>
+                            {summary.balance >= 0 ? '✓ Positivo' : '✗ Negativo'}
                         </ThemedText>
                     </ThemedView>
 
-                    <ThemedView style={[styles.card, { borderLeftColor: colors.danger, borderLeftWidth: 4 }]}>
-                        <ThemedView style={styles.cardHeader}>
-                            <ThemedText type="small" themeColor="textSecondary" style={styles.cardLabel}>Despesas</ThemedText>
-                            <ThemedText style={[styles.cardAmount, { color: colors.danger }]}>−</ThemedText>
+                    <ThemedView style={styles.cardsGrid}>
+                        <ThemedView style={[styles.card, { borderLeftColor: colors.success, borderLeftWidth: 4 }]}>
+                            <ThemedView style={styles.cardHeader}>
+                                <ThemedText type="small" themeColor="textSecondary" style={styles.cardLabel}>Entradas</ThemedText>
+                                <ThemedText style={[styles.cardAmount, { color: colors.success }]}>↑</ThemedText>
+                            </ThemedView>
+                            <ThemedText type="title" style={styles.cardValue}>
+                                R$ {summary.totalIncome.toFixed(2)}
+                            </ThemedText>
                         </ThemedView>
-                        <ThemedText type="title" style={styles.cardValue}>
-                            R$ {summary.totalExpense.toFixed(2)}
-                        </ThemedText>
+
+                        <ThemedView style={[styles.card, { borderLeftColor: colors.danger, borderLeftWidth: 4 }]}>
+                            <ThemedView style={styles.cardHeader}>
+                                <ThemedText type="small" themeColor="textSecondary" style={styles.cardLabel}>Saídas</ThemedText>
+                                <ThemedText style={[styles.cardAmount, { color: colors.danger }]}>↓</ThemedText>
+                            </ThemedView>
+                            <ThemedText type="title" style={styles.cardValue}>
+                                R$ {summary.totalExpense.toFixed(2)}
+                            </ThemedText>
+                        </ThemedView>
                     </ThemedView>
+
+                    {/* Lista de Transações */}
+                    <View style={styles.transactionsSection}>
+                        <ThemedText type="default" style={styles.transactionsTitle}>Transações</ThemedText>
+                        {transactions.length === 0 ? (
+                            <ThemedText type="small" themeColor="textSecondary" style={styles.emptyMessage}>
+                                Nenhuma transação registrada
+                            </ThemedText>
+                        ) : (
+                            <View style={styles.transactionsList}>
+                                {transactions.map((transaction) => (
+                                    <View
+                                        key={transaction.id}
+                                        style={[
+                                            styles.transactionItem,
+                                            {
+                                                borderLeftColor: transaction.type === 'income' ? colors.success : colors.danger,
+                                                backgroundColor: colors.backgroundElement,
+                                            },
+                                        ]}
+                                    >
+                                        <View style={styles.transactionInfo}>
+                                            <ThemedText type="small" style={styles.transactionDate}>
+                                                {new Date(transaction.date).toLocaleDateString('pt-BR')}
+                                            </ThemedText>
+                                            <ThemedText type="small" themeColor="textSecondary" style={styles.transactionTitle}>
+                                                {transaction.description}
+                                            </ThemedText>
+                                        </View>
+                                        <ThemedText
+                                            type="default"
+                                            style={[
+                                                styles.transactionAmount,
+                                                {
+                                                    color: transaction.type === 'income' ? colors.success : colors.danger,
+                                                },
+                                            ]}
+                                        >
+                                            {transaction.type === 'income' ? '+' : '−'} R$ {transaction.amount.toFixed(2)}
+                                        </ThemedText>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
+                    </View>
                 </ThemedView>
-            </ThemedView>
+            </ScrollView>
+
+            <ConfirmationModal
+                visible={logoutModalVisible}
+                title="Sair"
+                message="Tem certeza que deseja sair da sua conta?"
+                cancelText="Cancelar"
+                confirmText="Sair"
+                onCancel={handleLogoutCancel}
+                onConfirm={handleLogoutConfirm}
+                isDangerous={true}
+                isLoading={logoutLoading}
+            />
+
+            <AddTransactionModal
+                visible={addTransactionModalVisible}
+                onClose={() => setAddTransactionModalVisible(false)}
+                onAdd={handleAddTransaction}
+                isLoading={addTransactionLoading}
+            />
         </SafeAreaView>
     );
 }
@@ -113,10 +220,13 @@ const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
     },
-    container: {
+    scrollContainer: {
         flex: 1,
+    },
+    container: {
         padding: 20,
         gap: 24,
+        paddingBottom: 40,
     },
     header: {
         backgroundColor: 'transparent',
@@ -139,6 +249,24 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
     },
+    headerButtons: {
+        flexDirection: 'row',
+        gap: 8,
+        alignItems: 'center',
+    },
+    addButton: {
+        borderWidth: 1.5,
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        minWidth: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    addButtonText: {
+        fontSize: 20,
+        fontWeight: '600',
+    },
     balanceCard: {
         padding: 24,
         borderRadius: 16,
@@ -156,8 +284,11 @@ const styles = StyleSheet.create({
     cardsGrid: {
         gap: 12,
         backgroundColor: 'transparent',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
     },
     card: {
+        flex: 1,
         padding: 20,
         borderRadius: 14,
         gap: 8,
@@ -185,5 +316,43 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: '700',
         marginTop: 4,
+    },
+    transactionsSection: {
+        gap: 12,
+    },
+    transactionsTitle: {
+        fontWeight: '600',
+        fontSize: 16,
+    },
+    transactionsList: {
+        gap: 8,
+    },
+    transactionItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 12,
+        borderRadius: 8,
+        borderLeftWidth: 4,
+        gap: 12,
+    },
+    transactionInfo: {
+        flex: 1,
+        gap: 4,
+    },
+    transactionDate: {
+        fontWeight: '600',
+        fontSize: 12,
+    },
+    transactionTitle: {
+        fontSize: 12,
+    },
+    transactionAmount: {
+        fontWeight: '600',
+        fontSize: 14,
+    },
+    emptyMessage: {
+        textAlign: 'center',
+        paddingVertical: 20,
     },
 });
