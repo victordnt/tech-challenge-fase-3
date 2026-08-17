@@ -101,12 +101,6 @@ export default function DashboardScreen() {
                         </ThemedView>
                         <View style={styles.headerButtons}>
                             <TouchableOpacity
-                                onPress={() => setAddTransactionModalVisible(true)}
-                                style={[styles.addButton, { borderColor: colors.primary }]}
-                            >
-                                <ThemedText style={[styles.addButtonText, { color: colors.primary }]}>+</ThemedText>
-                            </TouchableOpacity>
-                            <TouchableOpacity
                                 onPress={handleLogoutPress}
                                 style={[styles.logoutButton, { borderColor: colors.danger }]}
                             >
@@ -147,9 +141,15 @@ export default function DashboardScreen() {
                         </ThemedView>
                     </ThemedView>
 
-                    {/* Lista de Transações */}
+                    {/* Botão Nova Transação */}
+                    <TouchableOpacity
+                        onPress={() => setAddTransactionModalVisible(true)}
+                        style={[styles.newTransactionButton, { backgroundColor: colors.primary }]}
+                    >
+                        <ThemedText style={styles.newTransactionButtonText}>+ Nova Transação</ThemedText>
+                    </TouchableOpacity>
+
                     <View style={styles.transactionsSection}>
-                        <ThemedText type="default" style={styles.transactionsTitle}>Transações</ThemedText>
                         {transactions.length === 0 ? (
                             <ThemedText type="small" themeColor="textSecondary" style={styles.emptyMessage}>
                                 Nenhuma transação registrada
@@ -168,11 +168,11 @@ export default function DashboardScreen() {
                                         ]}
                                     >
                                         <View style={styles.transactionInfo}>
-                                            <ThemedText type="small" style={styles.transactionDate}>
-                                                {new Date(transaction.date).toLocaleDateString('pt-BR')}
-                                            </ThemedText>
-                                            <ThemedText type="small" themeColor="textSecondary" style={styles.transactionTitle}>
+                                            <ThemedText type="small" style={styles.transactionTitle}>
                                                 {transaction.description}
+                                            </ThemedText>
+                                            <ThemedText type="small" themeColor="textSecondary" style={[styles.transactionDate, { color: colors.textSecondary }]}>
+                                                {new Date(transaction.date).toLocaleDateString('pt-BR')}
                                             </ThemedText>
                                         </View>
                                         <ThemedText
@@ -317,6 +317,23 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         marginTop: 4,
     },
+    newTransactionButton: {
+        paddingVertical: 16,
+        paddingHorizontal: 20,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    newTransactionButtonText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '600',
+    },
     transactionsSection: {
         gap: 12,
     },
@@ -341,11 +358,12 @@ const styles = StyleSheet.create({
         gap: 4,
     },
     transactionDate: {
-        fontWeight: '600',
-        fontSize: 12,
+        fontSize: 11,
+        opacity: 0.7,
     },
     transactionTitle: {
-        fontSize: 12,
+        fontSize: 13,
+        fontWeight: '500',
     },
     transactionAmount: {
         fontWeight: '600',

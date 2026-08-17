@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useMemo, useState } from 'react';
 
+import { addTransactionToFirebase, getTransactionsByUser } from '@/services/firebase/transactions-service';
 import type { Transaction, TransactionFilters } from '@/types/finance';
-import { getTransactionsByUser, addTransactionToFirebase } from '@/services/firebase/transactions-service';
 
 interface TransactionsContextValue {
     transactions: Transaction[];
