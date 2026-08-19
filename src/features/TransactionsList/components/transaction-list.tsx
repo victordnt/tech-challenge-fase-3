@@ -1,6 +1,6 @@
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
-import { Transaction } from '@/types/finance';
+import { Transaction } from '@/features/TransactionsList/types/finance';
 import { useState } from 'react';
 import {
     Alert,
@@ -10,9 +10,9 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { PhotoPreviewModal } from './photo-preview-modal';
-import { ThemedText } from './themed-text';
-import { ThemedView } from './themed-view';
+import { PhotoPreviewModal } from '@/features/TransactionsList/components/photo-preview-modal';
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
 
 interface TransactionListProps {
     transactions: Transaction[];

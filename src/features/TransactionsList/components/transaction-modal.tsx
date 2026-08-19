@@ -1,8 +1,8 @@
-import { useAuth } from '@/contexts/auth-context';
-import { useTransactions } from '@/contexts/transactions-context';
+import { useAuth } from '@/features/UserProfile/contexts/auth-context';
+import { useTransactions } from '@/features/TransactionsList/contexts/transactions-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
-import type { Transaction } from '@/types/finance';
+import type { Transaction } from '@/features/TransactionsList/types/finance';
 import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -17,10 +17,10 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { PhotoPicker } from './photo-picker';
-import { PhotoPreviewModal } from './photo-preview-modal';
-import { ThemedText } from './themed-text';
-import { ThemedView } from './themed-view';
+import { PhotoPicker } from '@/features/TransactionsList/components/photo-picker';
+import { PhotoPreviewModal } from '@/features/TransactionsList/components/photo-preview-modal';
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
 
 interface TransactionModalProps {
     visible: boolean;
@@ -487,7 +487,5 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         alignItems: 'center',
     },
-    submitButton: {
-        fontWeight: '600',
-    },
+    submitButton: {},
 });

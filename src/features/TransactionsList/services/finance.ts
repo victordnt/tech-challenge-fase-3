@@ -1,4 +1,4 @@
-import type { DashboardSummary, Transaction, TransactionFilters } from '@/types/finance';
+import type { DashboardSummary, Transaction, TransactionFilters } from '@/features/TransactionsList/types/finance';
 
 export function calculateDashboardSummary(transactions: Transaction[]): DashboardSummary {
   const totalIncome = transactions

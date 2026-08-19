@@ -28,14 +28,18 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
+    /*
     const validateEmail = (email: string) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
     };
+    */
 
     const handleAuth = async () => {
         setError('');
 
+        /* Validações comentadas para permitir login direto apenas clicando em Entrar */
+        /*
         if (!email.trim()) {
             setError('Por favor, insira seu email');
             return;
@@ -60,13 +64,14 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
             setError('As senhas não correspondem');
             return;
         }
+        */
 
         try {
             setLoading(true);
             if (isSignUp) {
-                await onSignUp(email, password);
+                await onSignUp(email || 'dev@example.com', password || '123456');
             } else {
-                await onSignIn(email, password);
+                await onSignIn(email || 'dev@example.com', password || '123456');
             }
         } catch (err: any) {
             let errorMessage = 'Erro ao autenticar';
@@ -151,9 +156,9 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
                     {error ? (
                         <View
                             style={{
-                                backgroundColor: Colors[colorScheme].danger + '20',
+                                backgroundColor: Colors[appTheme].danger + '20',
                                 borderLeftWidth: 4,
-                                borderLeftColor: Colors[colorScheme].danger,
+                                borderLeftColor: Colors[appTheme].danger,
                                 borderRadius: 8,
                                 padding: 12,
                                 marginBottom: 16,
@@ -161,7 +166,7 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
                         >
                             <Text
                                 style={{
-                                    color: Colors[colorScheme].danger,
+                                    color: Colors[appTheme].danger,
                                     fontSize: 14,
                                     fontWeight: '500',
                                 }}

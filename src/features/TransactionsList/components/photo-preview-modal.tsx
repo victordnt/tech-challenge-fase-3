@@ -5,7 +5,7 @@ import {
     StyleSheet,
     TouchableOpacity,
 } from 'react-native';
-import { ThemedText } from './themed-text';
+import { ThemedText } from '@/components/themed-text';
 
 interface PhotoPreviewModalProps {
     visible: boolean;

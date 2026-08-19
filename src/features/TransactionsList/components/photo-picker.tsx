@@ -10,7 +10,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { ThemedText } from './themed-text';
+import { ThemedText } from '@/components/themed-text';
 
 interface PhotoPickerProps {
     photo: string | null;

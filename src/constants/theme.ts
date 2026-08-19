@@ -25,7 +25,7 @@ export type ColorScheme = {
 let _colors: { light: ColorScheme; dark: ColorScheme; unspecified: ColorScheme } = {
   light: {
     text: '#1A1A2E',
-    background: '#F8F9FB',
+    background: '#101415',
     backgroundElement: '#FFFFFF',
     backgroundSelected: '#E8EBF5',
     textSecondary: '#6B7280',
@@ -41,7 +41,7 @@ let _colors: { light: ColorScheme; dark: ColorScheme; unspecified: ColorScheme }
   },
   dark: {
     text: '#F3F4F6',
-    background: '#0F172A',
+    background: '#101415',
     backgroundElement: '#1E293B',
     backgroundSelected: '#334155',
     textSecondary: '#94A3B8',

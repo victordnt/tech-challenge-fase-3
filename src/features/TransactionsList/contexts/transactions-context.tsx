@@ -5,9 +5,9 @@ import {
     deleteTransactionFromFirestore,
     onTransactionsSnapshot,
     updateTransactionInFirestore,
-} from '@/services/firebase/firestore';
-import type { Transaction, TransactionFilters } from '@/types/finance';
-import { useAuth } from './auth-context';
+} from '@/features/TransactionsList/services/firestore';
+import type { Transaction, TransactionFilters } from '@/features/TransactionsList/types/finance';
+import { useAuth } from '@/features/UserProfile/contexts/auth-context';
 
 interface TransactionsContextValue {
     transactions: Transaction[];

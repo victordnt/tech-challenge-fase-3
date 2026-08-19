@@ -1,7 +1,7 @@
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
 import { StyleSheet, TouchableOpacity } from 'react-native';
-import { ThemedText } from './themed-text';
+import { ThemedText } from '@/components/themed-text';
 
 interface TransactionButtonProps {
     onPress: () => void;

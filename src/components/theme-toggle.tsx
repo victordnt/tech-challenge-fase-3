@@ -1,7 +1,7 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useTheme } from '@/hooks/use-theme';
 import { StyleSheet, Switch, View } from 'react-native';
-import { ThemedText } from './themed-text';
+import { ThemedText } from '@/components/themed-text';
 
 export function ThemeToggle() {
     const { theme, setTheme } = useAppContext();
@@ -14,7 +14,7 @@ export function ThemeToggle() {
 
     return (
         <View style={[styles.container, { backgroundColor: themeObj.backgroundElement, borderColor: themeObj.border }]}>
-            <ThemedText style={{ fontSize: 16 }}>🌙</ThemedText>
+            <ThemedText style={{ fontSize: 16 }}>☀️</ThemedText>
             <Switch
                 trackColor={{ false: themeObj.textSecondary, true: themeObj.neon || themeObj.lilac || '#A855F7' }}
                 thumbColor={isDark ? themeObj.neon || '#A855F7' : themeObj.lilac || '#C084FC'}
@@ -22,7 +22,7 @@ export function ThemeToggle() {
                 value={isDark}
                 onValueChange={handleToggle}
             />
-            <ThemedText style={{ fontSize: 16 }}>☀️</ThemedText>
+            <ThemedText style={{ fontSize: 16 }}>🌙</ThemedText>
         </View>
     );
 }

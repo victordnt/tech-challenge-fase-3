@@ -1,9 +1,10 @@
-import type { Transaction } from '@/types/finance';
+import type { Transaction } from '@/features/TransactionsList/types/finance';
 import {
     addDoc,
     collection,
     deleteDoc,
     doc,
+    getDocs,
     getFirestore,
     onSnapshot,
     query,
@@ -11,7 +12,7 @@ import {
     Unsubscribe,
     updateDoc,
 } from 'firebase/firestore';
-import { auth } from './config';
+import { auth } from '@/services/firebase/config';
 
 const db = getFirestore(auth.app);
 

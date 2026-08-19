@@ -1,7 +1,6 @@
-import * as authService from "@/services/auth/auth-service";
 import { Href, useRouter } from "expo-router";
 import type { User } from "firebase/auth";
-import React, { createContext, useEffect } from "react";
+import React, { createContext } from "react";
 
 interface AuthContextType {
     user: User | null;
@@ -16,31 +15,23 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = React.useState<User | null>(null);
-    const [loading, setLoading] = React.useState(true);
+    const loading = false;
     const router = useRouter();
 
-    useEffect(() => {
-        // Observar mudanças no estado de autenticação
-        const unsubscribe = authService.observeAuthState((currentUser) => {
-            setUser(currentUser);
-            setLoading(false);
-        });
-
-        return () => unsubscribe();
-    }, []);
-
     const signUp = async (email: string, password: string) => {
-        const result = await authService.signUp(email, password);
-        setUser(result.user);
+        // const result = await authService.signUp(email, password);
+        // setUser(result.user);
+        setUser({ email: email || 'dev@example.com', uid: 'dev-user' } as any);
     };
 
     const signIn = async (email: string, password: string) => {
-        const result = await authService.signIn(email, password);
-        setUser(result.user);
+        // const result = await authService.signIn(email, password);
+        // setUser(result.user);
+        setUser({ email: email || 'dev@example.com', uid: 'dev-user' } as any);
     };
 
     const signOut = async () => {
-        await authService.signOutUser();
+        // await authService.signOutUser();
         setUser(null);
     };
 
