@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, TouchableOpacity, useColorScheme, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Badge, BadgeText } from '@gluestack-ui/themed';
 
 import { PaginationFooter } from '@/features/TransactionsList/components/pagination-footer';
 import { SummaryCards } from '@/features/TransactionsList/components/summary-cards';
@@ -36,6 +37,47 @@ export default function DashboardScreen() {
     const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const paginatedTransactions = filteredTransactions.slice(startIndex, startIndex + itemsPerPage);
+
+    // Filtros de badges dinâmicos
+    const categories = useMemo(() => {
+        return Array.from(new Set(transactions.map((t) => t.category))).filter(Boolean);
+    }, [transactions]);
+
+    const activeFilter = useMemo(() => {
+        if (filters.type === 'income') return 'Income';
+        if (filters.type === 'expense') return 'Expense';
+        if (filters.category) return filters.category;
+        return 'All';
+    }, [filters]);
+
+    const filterOptions = useMemo(() => {
+        return ['All', 'Income', 'Expense', ...categories];
+    }, [categories]);
+
+    const handleSelectFilter = (filter: string) => {
+        setCurrentPage(1);
+        if (filter === 'All') {
+            setFilters((prev) => {
+                const { type, category, ...rest } = prev;
+                return rest;
+            });
+        } else if (filter === 'Income') {
+            setFilters((prev) => {
+                const { category, ...rest } = prev;
+                return { ...rest, type: 'income' };
+            });
+        } else if (filter === 'Expense') {
+            setFilters((prev) => {
+                const { category, ...rest } = prev;
+                return { ...rest, type: 'expense' };
+            });
+        } else {
+            setFilters((prev) => {
+                const { type, ...rest } = prev;
+                return { ...rest, category: filter };
+            });
+        }
+    };
 
     useEffect(() => {
         console.log("Firebase project:", auth.app.options.projectId);
@@ -122,6 +164,35 @@ export default function DashboardScreen() {
                             }}
                             style={styles.searchBar}
                         />
+
+                        {/* Badge Filter List */}
+                        <View style={styles.filterWrapper}>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterContainer}>
+                                {filterOptions.map((option) => (
+                                    <TouchableOpacity key={option} onPress={() => handleSelectFilter(option)} activeOpacity={0.8}>
+                                        <Badge
+                                            style={[
+                                                styles.badge,
+                                                activeFilter === option
+                                                    ? { backgroundColor: '#8A56FF', borderColor: 'transparent' }
+                                                    : { backgroundColor: '#1E1E20', borderColor: '#2E2E33', borderWidth: 1 }
+                                            ]}
+                                        >
+                                            <BadgeText
+                                                style={[
+                                                    styles.badgeText,
+                                                    activeFilter === option
+                                                        ? { color: '#FFFFFF' }
+                                                        : { color: '#94A3B8' }
+                                                ]}
+                                            >
+                                                {option === 'All' ? 'Tudo' : option === 'Income' ? 'Entradas' : option === 'Expense' ? 'Saídas' : option}
+                                            </BadgeText>
+                                        </Badge>
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                        </View>
 
                         {/* Summary Cards */}
                         <SummaryCards
@@ -223,5 +294,26 @@ const styles = StyleSheet.create({
     },
     searchBar: {
         marginBottom: 4,
+    },
+    filterWrapper: {
+        marginBottom: 4,
+    },
+    filterContainer: {
+        flexDirection: 'row',
+        gap: 8,
+        paddingBottom: 4,
+    },
+    badge: {
+        borderRadius: 20,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        height: 38,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    badgeText: {
+        fontSize: 14,
+        fontWeight: '500',
+        textTransform: 'none',
     },
 });

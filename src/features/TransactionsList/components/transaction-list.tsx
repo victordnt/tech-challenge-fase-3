@@ -1,18 +1,13 @@
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useTheme } from '@/hooks/use-theme';
 import { Transaction } from '@/features/TransactionsList/types/finance';
 import { useState } from 'react';
 import {
     Alert,
-    FlatList,
-    Image,
     StyleSheet,
     TouchableOpacity,
     View,
 } from 'react-native';
 import { PhotoPreviewModal } from '@/features/TransactionsList/components/photo-preview-modal';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 
 interface TransactionListProps {
     transactions: Transaction[];
@@ -21,15 +16,30 @@ interface TransactionListProps {
 }
 
 export function TransactionList({ transactions, onEdit, onDelete }: TransactionListProps) {
-    const theme = useTheme();
-    const colorScheme = useColorScheme();
-    const isDark = colorScheme === 'dark';
     const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 
-    const handleDelete = (transaction: Transaction) => {
+    const accentColor = '#8A56FF'; // Purple accent color
+
+    const formatTime = (dateStr: string) => {
+        try {
+            const d = new Date(dateStr);
+            let hours = d.getHours();
+            const minutes = d.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            const minStr = minutes < 10 ? '0' + minutes : minutes;
+            const hrStr = hours < 10 ? '0' + hours : hours;
+            return `${hrStr}:${minStr} ${ampm}`;
+        } catch {
+            return '12:00 PM';
+        }
+    };
+
+    const handleDeleteConfirm = (transaction: Transaction) => {
         Alert.alert(
             'Confirmar exclusão',
-            `Tem certeza que deseja excluir a transação "${transaction.category}"?`,
+            `Tem certeza que deseja excluir a transação "${transaction.description}"?`,
             [
                 { text: 'Cancelar', style: 'cancel' },
                 {
@@ -47,160 +57,173 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
         );
     };
 
-    const renderTransaction = ({ item }: { item: Transaction }) => {
-        const isIncome = item.type === 'income';
-        const color = isIncome ? theme.success : theme.danger;
-        const icon = isIncome ? '📥' : '📤';
+    const handleRowPress = (item: Transaction) => {
+        const options = ['Editar'];
+        if (item.receipt?.url) {
+            options.push('Ver Recibo');
+        }
+        options.push('Excluir', 'Cancelar');
 
-        return (
-            <ThemedView
-                style={[
-                    styles.transactionCard,
-                    {
-                        backgroundColor: theme.backgroundElement,
-                        borderColor: color,
-                    },
-                ]}
-            >
-                <View style={styles.cardHeader}>
-                    <View style={styles.leftContent}>
-                        <ThemedText style={{ fontSize: 20 }}>{icon}</ThemedText>
-                        <View style={{ flex: 1 }}>
-                            <ThemedText type="small" style={{ fontWeight: '600' }}>
-                                {item.category}
-                            </ThemedText>
-                            <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-                                {item.description || 'Sem descrição'}
-                            </ThemedText>
-                        </View>
-                    </View>
-                    <View style={styles.rightContent}>
-                        <ThemedText style={[styles.amount, { color }]}>
-                            {isIncome ? '+' : '-'} R$ {Math.abs(item.amount).toFixed(2)}
-                        </ThemedText>
-                        <ThemedText type="small" themeColor="textSecondary">
-                            {new Date(item.date).toLocaleDateString('pt-BR')}
-                        </ThemedText>
-                    </View>
-                </View>
-                {item.receipt?.url && (
-                    <TouchableOpacity
-                        onPress={() => setSelectedPhoto(item.receipt!.url)}
-                        style={[
-                            styles.photoThumbnail,
-                            { backgroundColor: theme.backgroundSelected },
-                        ]}
-                    >
-                        <Image
-                            source={{ uri: item.receipt.url }}
-                            style={styles.photoImage}
-                            resizeMode="cover"
-                        />
-                    </TouchableOpacity>
-                )}
-                {(onEdit || onDelete) && (
-                    <View style={styles.actionButtons}>
-                        {onEdit && (
-                            <TouchableOpacity
-                                onPress={() => onEdit(item)}
-                                style={[
-                                    styles.actionButton,
-                                    { backgroundColor: isDark ? '#6B21A8' : '#D8B4FE' },
-                                ]}
-                            >
-                                <ThemedText style={{ fontSize: 14 }}>✏️ Editar</ThemedText>
-                            </TouchableOpacity>
-                        )}
-                        {onDelete && (
-                            <TouchableOpacity
-                                onPress={() => handleDelete(item)}
-                                style={[
-                                    styles.actionButton,
-                                    { backgroundColor: isDark ? '#7F1D1D' : '#FCA5A5' },
-                                ]}
-                            >
-                                <ThemedText style={{ fontSize: 14 }}>🗑️ Excluir</ThemedText>
-                            </TouchableOpacity>
-                        )}
-                    </View>
-                )}
-            </ThemedView>
+        Alert.alert(
+            'Opções da Transação',
+            item.description,
+            [
+                {
+                    text: 'Editar',
+                    onPress: () => onEdit?.(item),
+                },
+                ...(item.receipt?.url ? [{
+                    text: 'Ver Recibo',
+                    onPress: () => setSelectedPhoto(item.receipt!.url),
+                }] : []),
+                {
+                    text: 'Excluir',
+                    style: 'destructive' as const,
+                    onPress: () => handleDeleteConfirm(item),
+                },
+                {
+                    text: 'Cancelar',
+                    style: 'cancel' as const,
+                }
+            ]
         );
     };
 
+    // Grouping transactions by date
+    const groups: { [key: string]: Transaction[] } = {};
+    transactions.forEach((tx) => {
+        const txDate = new Date(tx.date);
+        const today = new Date();
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        let dateKey = '';
+        if (txDate.toDateString() === today.toDateString()) {
+            dateKey = 'TODAY';
+        } else if (txDate.toDateString() === yesterday.toDateString()) {
+            dateKey = 'YESTERDAY';
+        } else {
+            const day = txDate.getDate();
+            const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+            dateKey = `${day} ${months[txDate.getMonth()]}`;
+        }
+
+        if (!groups[dateKey]) {
+            groups[dateKey] = [];
+        }
+        groups[dateKey].push(tx);
+    });
+
+    const groupKeys = Object.keys(groups);
+
+    if (transactions.length === 0) {
+        return (
+            <View style={styles.emptyContainer}>
+                <ThemedText themeColor="textSecondary">Nenhuma transação ainda</ThemedText>
+            </View>
+        );
+    }
+
     return (
-        <>
-            <FlatList
-                data={transactions}
-                renderItem={renderTransaction}
-                keyExtractor={(item) => item.id}
-                scrollEnabled={false}
-                contentContainerStyle={styles.list}
-                ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
-                        <ThemedText themeColor="textSecondary">Nenhuma transação ainda</ThemedText>
+        <View style={styles.container}>
+            {groupKeys.map((dateKey) => {
+                const groupTransactions = groups[dateKey];
+                return (
+                    <View key={dateKey} style={styles.groupContainer}>
+                        <ThemedText style={styles.sectionTitle}>{dateKey}</ThemedText>
+                        <View style={styles.cardContainer}>
+                            {groupTransactions.map((item, index) => {
+                                const isIncome = item.type === 'income';
+                                const amountColor = isIncome ? accentColor : '#FFFFFF';
+                                const formattedTime = formatTime(item.date);
+
+                                return (
+                                    <TouchableOpacity
+                                        key={item.id}
+                                        onPress={() => handleRowPress(item)}
+                                        activeOpacity={0.7}
+                                        style={[
+                                            styles.row,
+                                            {
+                                                borderBottomWidth: index < groupTransactions.length - 1 ? 1 : 0,
+                                                borderBottomColor: '#2E2E33',
+                                            }
+                                        ]}
+                                    >
+                                        <View style={styles.rowLeft}>
+                                            <ThemedText style={styles.itemTitle}>
+                                                {item.description}
+                                            </ThemedText>
+                                            <ThemedText style={styles.itemSubtitle}>
+                                                {formattedTime} • {item.category} {item.receipt?.url ? '📎' : ''}
+                                            </ThemedText>
+                                        </View>
+                                        <ThemedText style={[styles.amount, { color: amountColor }]}>
+                                            {isIncome ? '+' : '-'} R$ {Math.abs(item.amount).toFixed(2)}
+                                        </ThemedText>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
                     </View>
-                }
-            />
+                );
+            })}
+
             <PhotoPreviewModal
                 visible={!!selectedPhoto}
                 photoUri={selectedPhoto}
                 onClose={() => setSelectedPhoto(null)}
             />
-        </>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
-    list: {
-        gap: 12,
+    container: {
+        gap: 20,
     },
-    transactionCard: {
-        borderWidth: 2,
-        borderRadius: 12,
-        padding: 12,
-        gap: 12,
+    groupContainer: {
+        gap: 8,
     },
-    cardHeader: {
+    sectionTitle: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#94A3B8',
+        letterSpacing: 0.8,
+        textTransform: 'uppercase',
+    },
+    cardContainer: {
+        backgroundColor: '#1E1E20',
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: '#2E2E33',
+        overflow: 'hidden',
+    },
+    row: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        minHeight: 70,
     },
-    leftContent: {
+    rowLeft: {
         flex: 1,
-        flexDirection: 'row',
-        gap: 12,
-        alignItems: 'center',
-    },
-    rightContent: {
-        alignItems: 'flex-end',
         gap: 4,
+        paddingRight: 12,
+    },
+    itemTitle: {
+        fontWeight: '500',
+        fontSize: 15,
+        color: '#FFFFFF',
+    },
+    itemSubtitle: {
+        fontSize: 12,
+        color: '#94A3B8',
     },
     amount: {
-        fontWeight: '700',
-        fontSize: 14,
-    },
-    photoThumbnail: {
-        width: '100%',
-        height: 100,
-        borderRadius: 8,
-        overflow: 'hidden',
-    },
-    photoImage: {
-        width: '100%',
-        height: '100%',
-    },
-    actionButtons: {
-        flexDirection: 'row',
-        gap: 8,
-        justifyContent: 'flex-end',
-        marginTop: 8,
-    },
-    actionButton: {
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 6,
-        alignItems: 'center',
+        fontSize: 15,
+        fontWeight: '600',
     },
     emptyContainer: {
         alignItems: 'center',
