@@ -6,7 +6,8 @@ import { Badge, BadgeText } from '@gluestack-ui/themed';
 import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
 import { SearchInput } from '@/components/search-input';
-import { TransactionGroupCard, MockTransaction } from '@/components/transaction-group-card';
+import { TransactionGroupCard } from '@/components/transaction-group-card';
+import { todayTransactions, yesterdayTransactions } from '@/features/TransactionsList/schemas/MockTransactions';
 
 export default function TransactionsListPage() {
     const colorScheme = useColorScheme();
@@ -15,28 +16,16 @@ export default function TransactionsListPage() {
 
     const [selectedFilter, setSelectedFilter] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
-
-    const todayTransactions: MockTransaction[] = [
-        { id: '1', description: 'Whole Foods Market', category: 'Groceries', time: '09:42 AM', amount: '$142.50', type: 'expense' },
-        { id: '2', description: 'Blue Bottle Coffee', category: 'Food & Drink', time: '08:15 AM', amount: '$6.50', type: 'expense' },
-        { id: '3', description: 'Tech Corp Inc.', category: 'Salary', time: '03:00 PM', amount: '$4,250.00', type: 'income' },
-    ];
-
-    const yesterdayTransactions: MockTransaction[] = [
-        { id: '4', description: 'Uber Ride', category: 'Transport', time: '06:20 PM', amount: '$24.80', type: 'expense' },
-        { id: '5', description: 'Netflix', category: 'Entertainment', time: '10:00 AM', amount: '$15.99', type: 'expense' },
-    ];
-
     const filterOptions = ['All', 'Income', 'Expense', 'Groceries', 'Food & Drink', 'Salary', 'Transport', 'Entertainment'];
 
     const allTransactions = [...todayTransactions, ...yesterdayTransactions];
     const filtered = allTransactions.filter(item => {
-        // Filter by badge
+      
         if (selectedFilter === 'Income' && item.type !== 'income') return false;
         if (selectedFilter === 'Expense' && item.type !== 'expense') return false;
         if (selectedFilter !== 'All' && selectedFilter !== 'Income' && selectedFilter !== 'Expense' && item.category !== selectedFilter) return false;
         
-        // Filter by search
+        // Filtro de pesquisa
         if (searchQuery.trim() !== '') {
             const query = searchQuery.toLowerCase();
             return item.description.toLowerCase().includes(query) || item.category.toLowerCase().includes(query);
@@ -64,16 +53,16 @@ export default function TransactionsListPage() {
                                     style={[
                                         styles.badge,
                                         selectedFilter === option
-                                            ? { backgroundColor: '#8A56FF', borderColor: 'transparent' }
-                                            : { backgroundColor: '#1E1E20', borderColor: '#2E2E33', borderWidth: 1 }
+                                            ? { backgroundColor: '#7C3AED', borderColor: 'transparent' }
+                                            : { backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(255, 255, 255, 0.1)', borderWidth: 1 }
                                     ]}
                                 >
                                     <BadgeText
                                         style={[
                                             styles.badgeText,
                                             selectedFilter === option
-                                                ? { color: '#FFFFFF' }
-                                                : { color: '#94A3B8' }
+                                                ? { color: '#EDE0FF' }
+                                                : { color: '#CCC3D8' }
                                         ]}
                                     >
                                         {option === 'All' ? 'All' : option}
@@ -84,7 +73,7 @@ export default function TransactionsListPage() {
                     </ScrollView>
                 </View>
 
-                {/* Transações de Hoje */}
+                {/* Transações diárias */}
                 {filteredToday.length > 0 && (
                     <View style={styles.sectionContainer}>
                         <ThemedText style={styles.sectionTitle}>Today</ThemedText>
@@ -92,7 +81,7 @@ export default function TransactionsListPage() {
                     </View>
                 )}
 
-                {/* Transações de Ontem */}
+                {/* Transações dia anterior */}
                 {filteredYesterday.length > 0 && (
                     <View style={styles.sectionContainer}>
                         <ThemedText style={styles.sectionTitle}>Yesterday</ThemedText>
@@ -147,7 +136,7 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 12,
         fontWeight: '600',
-        color: '#94A3B8',
+        color: 'rgba(204, 195, 216, 0.7)',
         letterSpacing: 0.8,
         textTransform: 'uppercase',
     },

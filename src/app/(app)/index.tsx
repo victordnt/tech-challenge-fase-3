@@ -1,1 +1,1 @@
-export { default } from '@/features/TransactionsList/screens/dashboard-screen';
+export { default } from '@/app/dashboard-screen';

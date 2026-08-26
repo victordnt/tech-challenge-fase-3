@@ -1,5 +1,6 @@
 import { auth } from "@/services/firebase/config";
 import { DarkTheme, DefaultTheme, Slot, ThemeProvider } from 'expo-router';
+// eslint-disable-next-line import/namespace
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from "react";
 import { GluestackUIProvider } from '@gluestack-ui/themed';
@@ -10,6 +11,7 @@ import { AppProvider, useAppContext } from '@/contexts/app-context';
 import { AuthProvider } from '@/features/UserProfile/contexts/auth-context';
 import { TransactionsProvider } from '@/features/TransactionsList/contexts/transactions-context';
 
+// eslint-disable-next-line import/namespace
 SplashScreen.preventAutoHideAsync();
 
 const CustomDarkTheme = {

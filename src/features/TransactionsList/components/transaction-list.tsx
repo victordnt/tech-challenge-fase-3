@@ -193,10 +193,10 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
     },
     cardContainer: {
-        backgroundColor: '#1E1E20',
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: '#2E2E33',
+        borderColor: 'rgba(255, 255, 255, 0.1)',
         overflow: 'hidden',
     },
     row: {
@@ -206,6 +206,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 14,
         minHeight: 70,
+        backgroundColor: 'transparent',
     },
     rowLeft: {
         flex: 1,

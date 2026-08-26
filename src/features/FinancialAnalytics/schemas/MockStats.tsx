@@ -1,0 +1,38 @@
+ export const cardData = [
+        {
+            title: 'Total Spent',
+            value: '$4,250.00',
+            subtext: '+12% vs last month',
+            subtextColor: '#FFB4AB',
+            iconName: { ios: 'arrow.down.right', android: 'trending_down', web: 'trending_down' },
+            iconColor: '#FFB4AB',
+            iconBg: 'rgba(255, 180, 171, 0.1)',
+        },
+        {
+            title: 'Total Income',
+            value: '$8,420.00',
+            subtext: '+5% vs last month',
+            subtextColor: '#D2BBFF',
+            iconName: { ios: 'arrow.up.right', android: 'trending_up', web: 'trending_up' },
+            iconColor: '#D2BBFF',
+            iconBg: 'rgba(210, 187, 255, 0.1)',
+        },
+        {
+            title: 'Savings Rate',
+            value: '49.5%',
+            subtext: 'Excellent',
+            subtextColor: '#E0E3E5',
+            iconName: { ios: 'piggybank', android: 'savings', web: 'savings' },
+            iconColor: '#B9C5F2',
+            iconBg: 'rgba(185, 197, 242, 0.1)',
+        },
+        {
+            title: 'Active Subs',
+            value: '$142.50',
+            subtext: 'Across 8 services',
+            subtextColor: '#E0E3E5',
+            iconName: { ios: 'play.rectangle', android: 'subscriptions', web: 'subscriptions' },
+            iconColor: '#FFB4A3',
+            iconBg: 'rgba(255, 180, 163, 0.1)',
+        },
+    ];

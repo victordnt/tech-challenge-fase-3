@@ -18,14 +18,14 @@ interface TransactionGroupCardProps {
 export function TransactionGroupCard({ transactions }: TransactionGroupCardProps) {
     const itemHeight = 72;
     const maxVisibleHeight = 3 * itemHeight;
-    const accentColor = '#8A56FF'; // Purple accent color matching the mockup
+    const accentColor = '#D2BBFF'; 
 
     return (
         <View style={[
             styles.cardContainer,
             {
-                backgroundColor: '#1E1E20',
-                borderColor: '#2E2E33',
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                borderColor: 'rgba(255, 255, 255, 0.1)',
             }
         ]}>
             <ScrollView
@@ -104,6 +104,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 16,
+        backgroundColor: 'transparent',
     },
     cardItemLeft: {
         flexDirection: 'row',
@@ -113,12 +114,12 @@ const styles = StyleSheet.create({
     itemTitle: {
         fontWeight: '500',
         fontSize: 15,
-        color: '#FFFFFF',
+        color: '#E0E3E5',
     },
     itemSubtitle: {
         fontSize: 12,
         marginTop: 2,
-        color: '#94A3B8',
+        color: '#CCC3D8',
     },
     amount: {
         fontSize: 15,
