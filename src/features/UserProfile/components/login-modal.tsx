@@ -116,9 +116,26 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={{ width: '100%', maxWidth: 400 }}
             >
+                <View style={{ marginBottom: 24, alignItems: 'center' }}>
+                <Text
+                style={{
+                    fontSize: 16,
+                    fontWeight: '400',
+                    color: '#D2BBFF',
+                
+                }}
+                >Mavi Finance</Text>
+                <Text
+                style={{
+                    fontSize: 16,
+                    fontWeight: '400',
+                    color: '#CCC3D8',
+                }}
+                >Welcome back to your digital wallet</Text>
+                </View>
                 <View
                     style={{
-                        backgroundColor: theme.backgroundElement,
+                        backgroundColor: 'rgba(255, 255, 255, 0.03)',
                         borderRadius: 16,
                         padding: 24,
                         shadowColor: theme.shadow,
@@ -128,30 +145,6 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
                         elevation: 10,
                     }}
                 >
-                    <Text
-                        style={{
-                            fontSize: 28,
-                            fontWeight: '700',
-                            color: theme.text,
-                            marginBottom: 8,
-                            textAlign: 'center',
-                        }}
-                    >
-                        {isSignUp ? 'Criar Conta' : 'Bem-vindo'}
-                    </Text>
-
-                    <Text
-                        style={{
-                            fontSize: 14,
-                            color: theme.textSecondary,
-                            marginBottom: 24,
-                            textAlign: 'center',
-                        }}
-                    >
-                        {isSignUp
-                            ? 'Crie sua conta para começar'
-                            : 'Faça login para acessar sua conta'}
-                    </Text>
 
                     {error ? (
                         <View
@@ -180,11 +173,11 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
                         style={{
                             fontSize: 14,
                             fontWeight: '600',
-                            color: theme.text,
+                            color: '#E0E3E5',
                             marginBottom: 8,
                         }}
                     >
-                        Email
+                       Email
                     </Text>
 
                     <TextInput
@@ -212,7 +205,7 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
                         style={{
                             fontSize: 14,
                             fontWeight: '600',
-                            color: theme.text,
+                            color: '#E0E3E5',
                             marginBottom: 8,
                         }}
                     >
@@ -220,7 +213,7 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
                     </Text>
 
                     <TextInput
-                        placeholder="Mínimo 6 caracteres"
+                        placeholder="••••••••"
                         placeholderTextColor={theme.textSecondary}
                         value={password}
                         onChangeText={setPassword}
@@ -278,7 +271,7 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
                         onPress={handleAuth}
                         disabled={loading}
                         style={{
-                            backgroundColor: theme.primary,
+                            backgroundColor: '#732EE4',
                             borderRadius: 8,
                             paddingVertical: 14,
                             justifyContent: 'center',
@@ -292,29 +285,30 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
                         ) : (
                             <Text
                                 style={{
-                                    color: '#FFFFFF',
+                                    color: '#EDE0FF',
                                     fontSize: 16,
                                     fontWeight: '600',
                                 }}
                             >
-                                {isSignUp ? 'Criar Conta' : 'Entrar'}
+                                {isSignUp ? 'Criar conta' : 'Entrar'}
                             </Text>
                         )}
                     </TouchableOpacity>
-
-                    <Pressable onPress={handleToggleMode}>
+                </View>
+                 <Pressable onPress={handleToggleMode}>
                         <View
                             style={{
                                 flexDirection: 'row',
                                 justifyContent: 'center',
                                 alignItems: 'center',
                                 flexWrap: 'wrap',
+                                marginTop: 16,
                             }}
                         >
                             <Text
                                 style={{
                                     fontSize: 14,
-                                    color: theme.textSecondary,
+                                    color: '#CCC3D8',
                                     textAlign: 'center',
                                 }}
                             >
@@ -324,7 +318,7 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
                             <Text
                                 style={{
                                     fontSize: 14,
-                                    color: theme.primary,
+                                    color: '#D2BBFF',
                                     fontWeight: '600',
                                 }}
                             >
@@ -332,7 +326,6 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
                             </Text>
                         </View>
                     </Pressable>
-                </View>
             </KeyboardAvoidingView>
         </View>
     );
