@@ -7,7 +7,6 @@ import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
-    FlatList,
     KeyboardAvoidingView,
     Modal,
     Platform,
@@ -22,6 +21,9 @@ import { PhotoPreviewModal } from '@/features/TransactionsList/components/photo-
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 
+import { FIXED_CATEGORIES } from '@/features/TransactionsList/constants/categories';
+import { SymbolView } from 'expo-symbols';
+
 interface TransactionModalProps {
     visible: boolean;
     onClose: () => void;
@@ -32,12 +34,12 @@ export function TransactionModal({ visible, onClose, editingTransaction }: Trans
     const theme = useTheme();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
-    const { addTransaction, updateTransaction, transactions } = useTransactions();
+    const { addTransaction, updateTransaction } = useTransactions();
     const { user } = useAuth();
 
     const [type, setType] = useState<'income' | 'expense'>('income');
     const [amount, setAmount] = useState('');
-    const [category, setCategory] = useState('');
+    const [category, setCategory] = useState<string>(FIXED_CATEGORIES[0]);
     const [description, setDescription] = useState('');
     const [photo, setPhoto] = useState<string | null>(null);
     const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
@@ -49,9 +51,10 @@ export function TransactionModal({ visible, onClose, editingTransaction }: Trans
     const resetForm = () => {
         setType('income');
         setAmount('');
-        setCategory('');
+        setCategory(FIXED_CATEGORIES[0]);
         setDescription('');
         setPhoto(null);
+        setShowCategoryDropdown(false);
     };
 
     // Inicializar campos ao abrir ou ao editar uma transação
@@ -60,9 +63,10 @@ export function TransactionModal({ visible, onClose, editingTransaction }: Trans
             const timer = setTimeout(() => {
                 setType(editingTransaction.type as 'income' | 'expense');
                 setAmount(editingTransaction.amount.toString());
-                setCategory(editingTransaction.category);
+                setCategory(editingTransaction.category || FIXED_CATEGORIES[0]);
                 setDescription(editingTransaction.description);
                 setPhoto(editingTransaction.receipt?.url || null);
+                setShowCategoryDropdown(false);
             }, 0);
             return () => clearTimeout(timer);
         } else {
@@ -72,10 +76,6 @@ export function TransactionModal({ visible, onClose, editingTransaction }: Trans
             return () => clearTimeout(timer);
         }
     }, [editingTransaction, visible]);
-
-    // Extrair categorias únicas existentes
-    const existingCategories = Array.from(new Set(transactions.map((t) => t.category)))
-        .filter((cat) => cat.toLowerCase() !== category.toLowerCase());
 
     const handleSubmit = async () => {
         if (!user) {
@@ -89,12 +89,7 @@ export function TransactionModal({ visible, onClose, editingTransaction }: Trans
         }
 
         if (!category.trim()) {
-            Alert.alert('Erro', 'Por favor, insira uma categoria');
-            return;
-        }
-
-        if (!description.trim()) {
-            Alert.alert('Erro', 'A descrição é obrigatória');
+            Alert.alert('Erro', 'Por favor, selecione uma categoria');
             return;
         }
 
@@ -105,12 +100,13 @@ export function TransactionModal({ visible, onClose, editingTransaction }: Trans
             const receiptId = `receipt-${timestamp}-${randomPart}`;
             const isoDate = new Date().toISOString();
             const dateStr = isoDate.split('T')[0];
+            const finalDescription = description.trim() || category.trim();
 
             const transactionData = {
                 type,
                 amount: parseFloat(amount),
                 category: category.trim(),
-                description: description.trim(),
+                description: finalDescription,
                 date: editingTransaction?.date || dateStr,
                 receipt: photo
                     ? {
@@ -163,7 +159,7 @@ export function TransactionModal({ visible, onClose, editingTransaction }: Trans
                                     {/* Header com X */}
                                     <View style={styles.header}>
                                         <ThemedText type="title" style={styles.title}>
-                                            Nova Transação
+                                            {editingTransaction ? 'Editar Transação' : 'Nova Transação'}
                                         </ThemedText>
                                         <TouchableOpacity onPress={onClose} style={styles.closeButton} disabled={isSaving}>
                                             <ThemedText style={{ fontSize: 28, fontWeight: 'bold', opacity: isSaving ? 0.5 : 1 }}>
@@ -233,67 +229,71 @@ export function TransactionModal({ visible, onClose, editingTransaction }: Trans
                                         />
                                     </View>
 
-                                    {/* Categoria */}
+                                    {/* Categoria (Select com Opções Fixas) */}
                                     <View style={styles.section}>
                                         <ThemedText type="small" style={styles.sectionLabel}>Categoria</ThemedText>
                                         <TouchableOpacity
                                             onPress={() => setShowCategoryDropdown(!showCategoryDropdown)}
                                             disabled={isSaving}
+                                            activeOpacity={0.8}
                                             style={[
-                                                styles.dropdownButton,
+                                                styles.selectButton,
                                                 {
                                                     backgroundColor: theme.backgroundSelected,
-                                                    borderColor: neonColor,
+                                                    borderColor: showCategoryDropdown ? neonColor : neonColor,
                                                     opacity: isSaving ? 0.5 : 1,
                                                 },
                                             ]}
                                         >
-                                            <ThemedText>{category || 'Selecionar ou digitar categoria...'}</ThemedText>
+                                            <ThemedText style={{ color: category ? theme.text : theme.textSecondary, fontWeight: '500' }}>
+                                                {category || 'Selecione uma categoria'}
+                                            </ThemedText>
+                                            <SymbolView
+                                                name={{ ios: 'chevron.down', android: 'arrow_drop_down', web: 'arrow_drop_down' }}
+                                                size={18}
+                                                tintColor={theme.textSecondary}
+                                            />
                                         </TouchableOpacity>
-                                        {showCategoryDropdown && existingCategories.length > 0 && (
+
+                                        {showCategoryDropdown && (
                                             <View
                                                 style={[
-                                                    styles.dropdown,
+                                                    styles.dropdownContainer,
                                                     { backgroundColor: theme.backgroundElement, borderColor: neonColor },
                                                 ]}
                                             >
-                                                <FlatList
-                                                    data={existingCategories}
-                                                    scrollEnabled={false}
-                                                    renderItem={({ item: cat }) => (
-                                                        <TouchableOpacity
-                                                            onPress={() => {
-                                                                setCategory(cat);
-                                                                setShowCategoryDropdown(false);
-                                                            }}
-                                                            style={[styles.dropdownItem, { borderBottomColor: theme.border }]}
-                                                        >
-                                                            <ThemedText>{cat}</ThemedText>
-                                                        </TouchableOpacity>
-                                                    )}
-                                                    keyExtractor={(item) => item}
-                                                />
+                                                <ScrollView style={{ maxHeight: 180 }} nestedScrollEnabled showsVerticalScrollIndicator>
+                                                    {FIXED_CATEGORIES.map((cat, idx) => {
+                                                        const isSelected = category === cat;
+                                                        return (
+                                                            <TouchableOpacity
+                                                                key={cat}
+                                                                onPress={() => {
+                                                                    setCategory(cat);
+                                                                    setShowCategoryDropdown(false);
+                                                                }}
+                                                                activeOpacity={0.7}
+                                                                style={[
+                                                                    styles.dropdownOption,
+                                                                    {
+                                                                        backgroundColor: isSelected ? 'rgba(138, 86, 255, 0.15)' : 'transparent',
+                                                                        borderBottomWidth: idx < FIXED_CATEGORIES.length - 1 ? 1 : 0,
+                                                                        borderBottomColor: theme.border,
+                                                                    },
+                                                                ]}
+                                                            >
+                                                                <ThemedText style={{ color: isSelected ? neonColor : theme.text, fontWeight: isSelected ? '600' : '400' }}>
+                                                                    {cat}
+                                                                </ThemedText>
+                                                                {isSelected && (
+                                                                    <ThemedText style={{ color: neonColor, fontWeight: 'bold' }}>✓</ThemedText>
+                                                                )}
+                                                            </TouchableOpacity>
+                                                        );
+                                                    })}
+                                                </ScrollView>
                                             </View>
                                         )}
-                                        <TextInput
-                                            style={[
-                                                styles.input,
-                                                {
-                                                    backgroundColor: theme.backgroundSelected,
-                                                    color: theme.text,
-                                                    borderColor: neonColor,
-                                                    opacity: isSaving ? 0.5 : 1,
-                                                },
-                                            ]}
-                                            placeholder="Digite uma categoria"
-                                            placeholderTextColor={theme.textSecondary}
-                                            value={category}
-                                            onChangeText={(text) => {
-                                                setCategory(text);
-                                                setShowCategoryDropdown(text.length > 0 && existingCategories.length > 0);
-                                            }}
-                                            editable={!isSaving}
-                                        />
                                     </View>
 
                                     {/* Descrição */}
@@ -452,23 +452,28 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         alignItems: 'center',
     },
-    dropdownButton: {
+    selectButton: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         borderWidth: 2,
         borderRadius: 8,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-    },
-    dropdown: {
-        borderWidth: 2,
-        borderRadius: 8,
-        marginBottom: 8,
-        overflow: 'hidden',
-        maxHeight: 120,
-    },
-    dropdownItem: {
         paddingHorizontal: 12,
         paddingVertical: 12,
-        borderBottomWidth: 1,
+        minHeight: 48,
+    },
+    dropdownContainer: {
+        borderWidth: 2,
+        borderRadius: 8,
+        marginTop: 4,
+        overflow: 'hidden',
+    },
+    dropdownOption: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 14,
+        paddingVertical: 12,
     },
     photoLoading: {
         borderRadius: 8,

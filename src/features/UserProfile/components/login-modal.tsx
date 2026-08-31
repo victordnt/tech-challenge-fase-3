@@ -28,24 +28,20 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    /*
-    const validateEmail = (email: string) => {
+    const validateEmail = (emailStr: string) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
+        return emailRegex.test(emailStr);
     };
-    */
 
     const handleAuth = async () => {
         setError('');
 
-        /* Validações comentadas para permitir login direto apenas clicando em Entrar */
-        /*
         if (!email.trim()) {
             setError('Por favor, insira seu email');
             return;
         }
 
-        if (!validateEmail(email)) {
+        if (!validateEmail(email.trim())) {
             setError('Email inválido');
             return;
         }
@@ -64,20 +60,19 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
             setError('As senhas não correspondem');
             return;
         }
-        */
 
         try {
             setLoading(true);
             if (isSignUp) {
-                await onSignUp(email || 'dev@example.com', password || '123456');
+                await onSignUp(email.trim(), password);
             } else {
-                await onSignIn(email || 'dev@example.com', password || '123456');
+                await onSignIn(email.trim(), password);
             }
         } catch (err: any) {
             let errorMessage = 'Erro ao autenticar';
 
-            if (err.code === 'auth/user-not-found') {
-                errorMessage = 'Usuário não encontrado';
+            if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+                errorMessage = 'Usuário ou senha incorretos';
             } else if (err.code === 'auth/wrong-password') {
                 errorMessage = 'Senha incorreta';
             } else if (err.code === 'auth/email-already-in-use') {
@@ -86,6 +81,8 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
                 errorMessage = 'Senha muito fraca';
             } else if (err.code === 'auth/invalid-email') {
                 errorMessage = 'Email inválido';
+            } else if (err.message) {
+                errorMessage = err.message;
             }
 
             setError(errorMessage);

@@ -1,5 +1,4 @@
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useTheme } from '@/hooks/use-theme';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 
@@ -8,11 +7,8 @@ interface TransactionButtonProps {
 }
 
 export function TransactionButton({ onPress }: TransactionButtonProps) {
-    const theme = useTheme();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
-
-    const neonColor = isDark ? (theme.neon || '#A855F7') : (theme.lilac || '#C084FC');
 
     return (
         <TouchableOpacity
@@ -20,8 +16,8 @@ export function TransactionButton({ onPress }: TransactionButtonProps) {
             style={[
                 styles.fab,
                 {
-                    backgroundColor: neonColor,
-                    shadowColor: neonColor,
+                    backgroundColor: '#7C3AED',
+                    shadowColor: '#7C3AED',
                     shadowOpacity: isDark ? 0.8 : 0.4,
                     shadowRadius: isDark ? 20 : 10,
                     elevation: isDark ? 15 : 8,
@@ -29,7 +25,7 @@ export function TransactionButton({ onPress }: TransactionButtonProps) {
             ]}
             activeOpacity={0.8}
         >
-            <ThemedText style={styles.plusIcon}>+</ThemedText>
+            <ThemedText style={styles.plusIcon}>+ Nova Transação</ThemedText>
         </TouchableOpacity>
     );
 }
@@ -38,17 +34,18 @@ const styles = StyleSheet.create({
     fab: {
         position: 'absolute',
         bottom: 30,
-        right: 30,
-        width: 60,
-        height: 60,
-        borderRadius: 30,
+        right: 20,
+        height: 48,
+        paddingHorizontal: 20,
+        borderRadius: 24,
+        flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 10,
     },
     plusIcon: {
-        fontSize: 32,
-        fontWeight: 'bold',
+        fontSize: 14,
+        fontWeight: '600',
         color: '#FFFFFF',
         textAlign: 'center',
     },

@@ -68,8 +68,11 @@ export function TransactionsProvider({ children }: { children: React.ReactNode }
     const addTransaction = async (transaction: Omit<Transaction, 'id' | 'userId'>) => {
         try {
             setError(null);
-            await addTransactionToFirestore(transaction);
-            // O listener em tempo real atualizará automaticamente
+            const created = await addTransactionToFirestore(transaction);
+            setTransactions((prev) => {
+                if (prev.some((t) => t.id === created.id)) return prev;
+                return [created, ...prev];
+            });
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Erro ao adicionar transação';
             setError(errorMessage);
@@ -80,8 +83,10 @@ export function TransactionsProvider({ children }: { children: React.ReactNode }
     const updateTransaction = async (id: string, updates: Partial<Transaction>) => {
         try {
             setError(null);
+            setTransactions((prev) =>
+                prev.map((item) => (item.id === id ? { ...item, ...updates } : item))
+            );
             await updateTransactionInFirestore(id, updates);
-            // O listener em tempo real atualizará automaticamente
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar transação';
             setError(errorMessage);
@@ -92,8 +97,8 @@ export function TransactionsProvider({ children }: { children: React.ReactNode }
     const deleteTransaction = async (id: string) => {
         try {
             setError(null);
+            setTransactions((prev) => prev.filter((item) => item.id !== id));
             await deleteTransactionFromFirestore(id);
-            // O listener em tempo real atualizará automaticamente
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Erro ao deletar transação';
             setError(errorMessage);

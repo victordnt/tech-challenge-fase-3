@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, ScrollView, Platform } from 'react-native';
+import { StyleSheet, View, ScrollView } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 
 export interface MockTransaction {
@@ -84,20 +84,6 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         overflow: 'hidden',
         paddingVertical: 4,
-        ...Platform.select({
-            ios: {
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-            },
-            android: {
-                elevation: 2,
-            },
-            web: {
-                boxShadow: '0 2px 4px 0 rgba(0, 0, 0, 0.2)',
-            }
-        })
     },
     cardItem: {
         flexDirection: 'row',

@@ -1,6 +1,7 @@
 import { Href, useRouter } from "expo-router";
 import type { User } from "firebase/auth";
-import React, { createContext } from "react";
+import React, { createContext, useEffect, useState } from "react";
+import * as authService from "@/features/UserProfile/services/auth-service";
 
 interface AuthContextType {
     user: User | null;
@@ -14,24 +15,30 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [user, setUser] = React.useState<User | null>(null);
-    const loading = false;
+    const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true);
     const router = useRouter();
 
+    useEffect(() => {
+        const unsubscribe = authService.observeAuthState((currentUser) => {
+            setUser(currentUser);
+            setLoading(false);
+        });
+        return () => unsubscribe();
+    }, []);
+
     const signUp = async (email: string, password: string) => {
-        // const result = await authService.signUp(email, password);
-        // setUser(result.user);
-        setUser({ email: email || 'dev@example.com', uid: 'dev-user' } as any);
+        const result = await authService.signUp(email, password);
+        setUser(result.user);
     };
 
     const signIn = async (email: string, password: string) => {
-        // const result = await authService.signIn(email, password);
-        // setUser(result.user);
-        setUser({ email: email || 'dev@example.com', uid: 'dev-user' } as any);
+        const result = await authService.signIn(email, password);
+        setUser(result.user);
     };
 
     const signOut = async () => {
-        // await authService.signOutUser();
+        await authService.signOutUser();
         setUser(null);
     };
 
@@ -39,16 +46,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const sign = (action: "in" | "up") => {
         return (redirectPath: Href) => {
             return async (email: string, password: string) => {
-                try {
-                    if (action === "in") {
-                        await signIn(email, password);
-                    } else {
-                        await signUp(email, password);
-                    }
-                    router.replace(redirectPath);
-                } catch (error) {
-                    throw error;
+                if (action === "in") {
+                    await signIn(email, password);
+                } else {
+                    await signUp(email, password);
                 }
+                router.replace(redirectPath);
             };
         };
     };

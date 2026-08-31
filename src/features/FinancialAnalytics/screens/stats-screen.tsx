@@ -2,24 +2,19 @@ import {
   StyleSheet,
   ScrollView,
   View,
+  Text,
   useColorScheme,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useMemo, useState } from "react";
+import { Badge, BadgeText } from "@gluestack-ui/themed";
+import { SymbolView } from "expo-symbols";
 
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
-import { useState } from "react";
-import {
-  Badge,
-  BadgeText,
-  HStack,
-  VStack,
-  Text,
-  Card,
-} from "@gluestack-ui/themed";
-import { SymbolView } from "expo-symbols";
-import { cardData } from "../schemas/MockStats";
+import { useTransactions } from "@/features/TransactionsList/contexts/transactions-context";
 import CashFlowGraph from "../components/CashFlowGraph";
 import CategoriesGraph from "../components/CategoriesGraph";
 
@@ -27,8 +22,98 @@ export default function StatsScreen() {
   const colorScheme = useColorScheme();
   const validColorScheme = colorScheme === "dark" ? "dark" : "light";
   const colors = Colors[validColorScheme];
-  const [selectedFilter, setSelectedFilter] = useState("All");
-  const filterOptions = ["Week", "Month", "Year"];
+  const { transactions, loading } = useTransactions();
+  const [selectedFilter, setSelectedFilter] = useState("Mês");
+  const filterOptions = ["Semana", "Mês", "Ano"];
+
+  // Filtrar transações pelo período selecionado
+  const filteredTransactions = useMemo(() => {
+    const now = new Date();
+    return transactions.filter((t) => {
+      const txDate = new Date(t.date);
+      if (isNaN(txDate.getTime())) return true;
+      const diffDays = (now.getTime() - txDate.getTime()) / (1000 * 3600 * 24);
+
+      if (selectedFilter === "Semana") return diffDays <= 7;
+      if (selectedFilter === "Mês") return diffDays <= 30;
+      if (selectedFilter === "Ano") return diffDays <= 365;
+      return true;
+    });
+  }, [transactions, selectedFilter]);
+
+  // Cálculos dos 4 Cards
+  const statsCards = useMemo(() => {
+    let totalSpent = 0;
+    let totalIncome = 0;
+    let expenseCount = 0;
+    let incomeCount = 0;
+
+    const categoryTotals: { [cat: string]: number } = {};
+
+    filteredTransactions.forEach((t) => {
+      const amt = Number(t.amount) || 0;
+      if (t.type === "expense") {
+        totalSpent += amt;
+        expenseCount++;
+        categoryTotals[t.category] = (categoryTotals[t.category] || 0) + amt;
+      } else if (t.type === "income") {
+        totalIncome += amt;
+        incomeCount++;
+      }
+    });
+
+    const netBalance = totalIncome - totalSpent;
+    const savingsRate =
+      totalIncome > 0 ? Math.max(0, (netBalance / totalIncome) * 100) : 0;
+
+    // Achar maior categoria de gastos
+    let topCategory = "Nenhum";
+    let topCategoryAmount = 0;
+    Object.entries(categoryTotals).forEach(([cat, sum]) => {
+      if (sum > topCategoryAmount) {
+        topCategoryAmount = sum;
+        topCategory = cat;
+      }
+    });
+
+    const topCategoryPercent =
+      totalSpent > 0 ? ((topCategoryAmount / totalSpent) * 100).toFixed(0) : "0";
+
+    return [
+      {
+        title: "Total de saídas",
+        value: `R$ ${totalSpent.toFixed(2)}`,
+        subtext: `${expenseCount} saídas no período`,
+        subtextColor: "#FFB4AB",
+        iconName: { ios: "arrow.down.right", android: "trending_down", web: "trending_down" },
+        iconColor: "#FFB4AB",
+      },
+      {
+        title: "Total de entradas",
+        value: `R$ ${totalIncome.toFixed(2)}`,
+        subtext: `${incomeCount} entradas no período`,
+        subtextColor: "#D2BBFF",
+        iconName: { ios: "arrow.up.right", android: "trending_up", web: "trending_up" },
+        iconColor: "#D2BBFF",
+      },
+      {
+        title: "Taxa de poupança",
+        value: `${savingsRate.toFixed(1)}%`,
+        subtext: totalIncome > 0 ? "do total recebido" : "sem entradas no período",
+        subtextColor: "#CCC3D8",
+        iconName: { ios: "piggybank", android: "savings", web: "savings" },
+        iconColor: "#B9C5F2",
+      },
+      {
+        title: "Maior gasto",
+        value: topCategory,
+        subtext: topCategoryAmount > 0 ? `${topCategoryPercent}% dos gastos (R$ ${topCategoryAmount.toFixed(2)})` : "Sem saídas no período",
+        subtextColor: "#CCC3D8",
+        iconName: { ios: "chart.pie", android: "pie_chart", web: "pie_chart" },
+        iconColor: "#FFB4A3",
+      },
+    ];
+  }, [filteredTransactions]);
 
   return (
     <SafeAreaView
@@ -42,10 +127,10 @@ export default function StatsScreen() {
         {/* Header */}
         <View style={styles.header}>
           <ThemedText type="title" style={styles.title}>
-            Análises financeiras
+            Análises Financeiras
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            Seu panorama financeiro
+             Seu panorama financeiro
           </ThemedText>
         </View>
 
@@ -85,7 +170,7 @@ export default function StatsScreen() {
                         : { color: "#94A3B8" },
                     ]}
                   >
-                    {option === "Week" ? "Week" : option}
+                    {option}
                   </BadgeText>
                 </Badge>
               </TouchableOpacity>
@@ -93,113 +178,125 @@ export default function StatsScreen() {
           </ScrollView>
         </View>
 
-        {/* Stats Cards Grid */}
-        <VStack style={styles.gridContainer}>
-          <HStack style={styles.row}>
-            {/* Card 1 */}
-            <Card style={styles.card}>
-              <HStack style={styles.cardHeader}>
-                <SymbolView
-                  name={cardData[0].iconName as any}
-                  size={14}
-                  tintColor={cardData[0].iconColor}
-                  weight="bold"
-                />
-                <Text style={styles.cardLabel}>{cardData[0].title}</Text>
-              </HStack>
-              <View style={styles.cardContent}>
-                <Text style={styles.cardValue}>{cardData[0].value}</Text>
-                <Text
-                  style={[
-                    styles.cardSubtext,
-                    { color: cardData[0].subtextColor },
-                  ]}
-                >
-                  {cardData[0].subtext}
-                </Text>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#8A56FF" />
+            <ThemedText type="small" style={{ color: "#94A3B8", marginTop: 12 }}>
+              Carregando análises do Firebase...
+            </ThemedText>
+          </View>
+        ) : (
+          <>
+            {/* Stats Cards Grid */}
+            <View style={styles.gridContainer}>
+              <View style={styles.row}>
+                {/* Card 1 */}
+                <View style={styles.card}>
+                  <View style={styles.cardHeader}>
+                    <SymbolView
+                      name={statsCards[0].iconName as any}
+                      size={14}
+                      tintColor={statsCards[0].iconColor}
+                      weight="bold"
+                    />
+                    <Text style={styles.cardLabel}>{statsCards[0].title}</Text>
+                  </View>
+                  <View style={styles.cardContent}>
+                    <Text style={styles.cardValue}>{statsCards[0].value}</Text>
+                    <Text
+                      style={[
+                        styles.cardSubtext,
+                        { color: statsCards[0].subtextColor },
+                      ]}
+                    >
+                      {statsCards[0].subtext}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Card 2 */}
+                <View style={styles.card}>
+                  <View style={styles.cardHeader}>
+                    <SymbolView
+                      name={statsCards[1].iconName as any}
+                      size={14}
+                      tintColor={statsCards[1].iconColor}
+                      weight="bold"
+                    />
+                    <Text style={styles.cardLabel}>{statsCards[1].title}</Text>
+                  </View>
+                  <View style={styles.cardContent}>
+                    <Text style={styles.cardValue}>{statsCards[1].value}</Text>
+                    <Text
+                      style={[
+                        styles.cardSubtext,
+                        { color: statsCards[1].subtextColor },
+                      ]}
+                    >
+                      {statsCards[1].subtext}
+                    </Text>
+                  </View>
+                </View>
               </View>
-            </Card>
 
-            {/* Card 2 */}
-            <Card style={styles.card}>
-              <HStack style={styles.cardHeader}>
-                <SymbolView
-                  name={cardData[1].iconName as any}
-                  size={14}
-                  tintColor={cardData[1].iconColor}
-                  weight="bold"
-                />
-                <Text style={styles.cardLabel}>{cardData[1].title}</Text>
-              </HStack>
-              <View style={styles.cardContent}>
-                <Text style={styles.cardValue}>{cardData[1].value}</Text>
-                <Text
-                  style={[
-                    styles.cardSubtext,
-                    { color: cardData[1].subtextColor },
-                  ]}
-                >
-                  {cardData[1].subtext}
-                </Text>
+              <View style={styles.row}>
+                {/* Card 3 */}
+                <View style={styles.card}>
+                  <View style={styles.cardHeader}>
+                    <SymbolView
+                      name={statsCards[2].iconName as any}
+                      size={14}
+                      tintColor={statsCards[2].iconColor}
+                      weight="bold"
+                    />
+                    <Text style={styles.cardLabel}>{statsCards[2].title}</Text>
+                  </View>
+                  <View style={styles.cardContent}>
+                    <Text style={styles.cardValue}>{statsCards[2].value}</Text>
+                    <Text
+                      style={[
+                        styles.cardSubtext,
+                        { color: statsCards[2].subtextColor, opacity: 0.7 },
+                      ]}
+                    >
+                      {statsCards[2].subtext}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Card 4 */}
+                <View style={styles.card}>
+                  <View style={styles.cardHeader}>
+                    <SymbolView
+                      name={statsCards[3].iconName as any}
+                      size={14}
+                      tintColor={statsCards[3].iconColor}
+                      weight="bold"
+                    />
+                    <Text style={styles.cardLabel}>{statsCards[3].title}</Text>
+                  </View>
+                  <View style={styles.cardContent}>
+                    <Text style={styles.cardValue}>{statsCards[3].value}</Text>
+                    <Text
+                      style={[
+                        styles.cardSubtext,
+                        { color: statsCards[3].subtextColor, opacity: 0.7 },
+                      ]}
+                    >
+                      {statsCards[3].subtext}
+                    </Text>
+                  </View>
+                </View>
               </View>
-            </Card>
-          </HStack>
+            </View>
 
-          <HStack style={styles.row}>
-            {/* Card 3 */}
-            <Card style={styles.card}>
-              <HStack style={styles.cardHeader}>
-                <SymbolView
-                  name={cardData[2].iconName as any}
-                  size={14}
-                  tintColor={cardData[2].iconColor}
-                  weight="bold"
-                />
-                <Text style={styles.cardLabel}>{cardData[2].title}</Text>
-              </HStack>
-              <View style={styles.cardContent}>
-                <Text style={styles.cardValue}>{cardData[2].value}</Text>
-                <Text
-                  style={[
-                    styles.cardSubtext,
-                    { color: cardData[2].subtextColor, opacity: 0.7 },
-                  ]}
-                >
-                  {cardData[2].subtext}
-                </Text>
-              </View>
-            </Card>
+            {/* Fluxo de Caixa */}
+            <CashFlowGraph transactions={filteredTransactions} />
 
-            {/* Card 4 */}
-            <Card style={styles.card}>
-              <HStack style={styles.cardHeader}>
-                <SymbolView
-                  name={cardData[3].iconName as any}
-                  size={14}
-                  tintColor={cardData[3].iconColor}
-                  weight="bold"
-                />
-                <Text style={styles.cardLabel}>{cardData[3].title}</Text>
-              </HStack>
-              <View style={styles.cardContent}>
-                <Text style={styles.cardValue}>{cardData[3].value}</Text>
-                <Text
-                  style={[
-                    styles.cardSubtext,
-                    { color: cardData[3].subtextColor, opacity: 0.7 },
-                  ]}
-                >
-                  {cardData[3].subtext}
-                </Text>
-              </View>
-            </Card>
-          </HStack>
-        </VStack>
-
-        <CashFlowGraph />
-
-        {/* Categories Card */}
-        <CategoriesGraph />
+            {/* Distribuição por Categorias */}
+            <CategoriesGraph transactions={filteredTransactions} />
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -238,6 +335,10 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     textTransform: "none",
   },
+  loadingContainer: {
+    alignItems: "center",
+    paddingVertical: 60,
+  },
   gridContainer: {
     marginTop: 8,
     gap: 16,
@@ -248,18 +349,13 @@ const styles = StyleSheet.create({
   },
   card: {
     flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 24,
     padding: 20,
     justifyContent: "space-between",
     minHeight: 146,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.35,
-    shadowRadius: 20,
-    elevation: 6,
   },
   cardHeader: {
     flexDirection: "row",
@@ -270,121 +366,18 @@ const styles = StyleSheet.create({
     marginTop: 16,
     gap: 4,
   },
-  iconContainer: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-  },
   cardLabel: {
     fontSize: 14,
     fontWeight: "500",
     color: "#CCC3D8",
   },
   cardValue: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: "700",
     color: "#E0E3E5",
   },
   cardSubtext: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  largeCard: {
-    width: "100%",
-    justifyContent: "flex-start",
-    minHeight: "auto",
-  },
-  chartHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  chartTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#E0E3E5",
-  },
-  barChartContainer: {
-    width: "100%",
-    alignItems: "center",
-    opacity: 0.7,
-  },
-  weekLabelsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    width: "100%",
-    paddingLeft: 45,
-    paddingRight: 10,
-    marginTop: 8,
-  },
-  xAxisLabel: {
-    fontSize: 11,
-    color: "#CCC3D8",
-    width: 50,
-    textAlign: "center",
-  },
-  legendContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 20,
-    marginTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255, 255, 255, 0.05)",
-    paddingTop: 16,
-    width: "100%",
-  },
-  legendItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  legendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  legendText: {
     fontSize: 12,
-    color: "#CCC3D8",
     fontWeight: "500",
-  },
-  donutContainer: {
-    width: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    marginVertical: 12,
-  },
-  categoriesList: {
-    gap: 14,
-    marginTop: 16,
-  },
-  categoryRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 4,
-  },
-  categoryLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  categoryColorDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  categoryName: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#E0E3E5",
-  },
-  categoryValue: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#CCC3D8",
   },
 });

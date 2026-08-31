@@ -140,6 +140,16 @@ export default function DashboardScreen() {
                     </ThemedView>
                     <ThemedView style={[styles.headerRight, { backgroundColor: 'transparent' }]}>
                         <TouchableOpacity
+                            onPress={() => {
+                                setEditingTransaction(null);
+                                setIsModalVisible(true);
+                            }}
+                            style={styles.newTransactionButton}
+                            activeOpacity={0.8}
+                        >
+                            <ThemedText style={styles.newTransactionButtonText}>+ Nova Transação</ThemedText>
+                        </TouchableOpacity>
+                        <TouchableOpacity
                             onPress={handleLogout}
                             style={[styles.logoutButton, { borderColor: colors.danger }]}
                         >
@@ -265,8 +275,21 @@ const styles = StyleSheet.create({
         fontSize: 28,
         fontWeight: '700',
     },
+    newTransactionButton: {
+        backgroundColor: '#7C3AED',
+        borderRadius: 8,
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    newTransactionButtonText: {
+        color: '#FFFFFF',
+        fontSize: 14,
+        fontWeight: '600',
+    },
     logoutButton: {
-        marginHorizontal: 20,
+        marginRight: 20,
         borderWidth: 1.5,
         borderRadius: 8,
         paddingHorizontal: 12,
