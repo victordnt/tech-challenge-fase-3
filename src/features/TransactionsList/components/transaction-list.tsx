@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { PhotoPreviewModal } from '@/features/TransactionsList/components/photo-preview-modal';
 import { ThemedText } from '@/components/themed-text';
+import { useTheme } from '@/hooks/use-theme';
 
 interface TransactionListProps {
     transactions: Transaction[];
@@ -16,9 +17,8 @@ interface TransactionListProps {
 }
 
 export function TransactionList({ transactions, onEdit, onDelete }: TransactionListProps) {
+    const theme = useTheme();
     const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
-
-    const accentColor = '#8A56FF'; // Purple accent color
 
     const formatTime = (dateStr: string) => {
         try {
@@ -58,12 +58,6 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
     };
 
     const handleRowPress = (item: Transaction) => {
-        const options = ['Editar'];
-        if (item.receipt?.url) {
-            options.push('Ver Recibo');
-        }
-        options.push('Excluir', 'Cancelar');
-
         Alert.alert(
             'Opções da Transação',
             item.description,
@@ -99,9 +93,9 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
 
         let dateKey = '';
         if (txDate.toDateString() === today.toDateString()) {
-            dateKey = 'TODAY';
+            dateKey = 'HOJE';
         } else if (txDate.toDateString() === yesterday.toDateString()) {
-            dateKey = 'YESTERDAY';
+            dateKey = 'ONTEM';
         } else {
             const day = txDate.getDate();
             const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
@@ -130,11 +124,11 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
                 const groupTransactions = groups[dateKey];
                 return (
                     <View key={dateKey} style={styles.groupContainer}>
-                        <ThemedText style={styles.sectionTitle}>{dateKey}</ThemedText>
-                        <View style={styles.cardContainer}>
+                        <ThemedText style={[styles.sectionTitle, { color: theme.textMuted }]}>{dateKey}</ThemedText>
+                        <View style={[styles.cardContainer, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
                             {groupTransactions.map((item, index) => {
                                 const isIncome = item.type === 'income';
-                                const amountColor = isIncome ? accentColor : '#FFFFFF';
+                                const amountColor = isIncome ? theme.income : theme.text;
                                 const formattedTime = formatTime(item.date);
 
                                 return (
@@ -146,15 +140,15 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
                                             styles.row,
                                             {
                                                 borderBottomWidth: index < groupTransactions.length - 1 ? 1 : 0,
-                                                borderBottomColor: '#2E2E33',
+                                                borderBottomColor: theme.cardSeparator,
                                             }
                                         ]}
                                     >
                                         <View style={styles.rowLeft}>
-                                            <ThemedText style={styles.itemTitle}>
+                                            <ThemedText style={[styles.itemTitle, { color: theme.text }]}>
                                                 {item.description}
                                             </ThemedText>
-                                            <ThemedText style={styles.itemSubtitle}>
+                                            <ThemedText style={[styles.itemSubtitle, { color: theme.textSecondary }]}>
                                                 {formattedTime} • {item.category} {item.receipt?.url ? '📎' : ''}
                                             </ThemedText>
                                         </View>
@@ -188,15 +182,12 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 12,
         fontWeight: '600',
-        color: '#94A3B8',
         letterSpacing: 0.8,
         textTransform: 'uppercase',
     },
     cardContainer: {
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.1)',
         overflow: 'hidden',
     },
     row: {
@@ -216,11 +207,9 @@ const styles = StyleSheet.create({
     itemTitle: {
         fontWeight: '500',
         fontSize: 15,
-        color: '#FFFFFF',
     },
     itemSubtitle: {
         fontSize: 12,
-        color: '#94A3B8',
     },
     amount: {
         fontSize: 15,

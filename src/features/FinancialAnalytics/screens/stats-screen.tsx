@@ -3,7 +3,6 @@ import {
   ScrollView,
   View,
   Text,
-  useColorScheme,
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
@@ -13,15 +12,13 @@ import { Badge, BadgeText } from "@gluestack-ui/themed";
 import { SymbolView } from "expo-symbols";
 
 import { ThemedText } from "@/components/themed-text";
-import { Colors } from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
 import { useTransactions } from "@/features/TransactionsList/contexts/transactions-context";
 import CashFlowGraph from "../components/CashFlowGraph";
 import CategoriesGraph from "../components/CategoriesGraph";
 
 export default function StatsScreen() {
-  const colorScheme = useColorScheme();
-  const validColorScheme = colorScheme === "dark" ? "dark" : "light";
-  const colors = Colors[validColorScheme];
+  const theme = useTheme();
   const { transactions, loading } = useTransactions();
   const [selectedFilter, setSelectedFilter] = useState("Mês");
   const filterOptions = ["Semana", "Mês", "Ano"];
@@ -41,7 +38,7 @@ export default function StatsScreen() {
     });
   }, [transactions, selectedFilter]);
 
-  // Cálculos dos 4 Cards
+  // Cálculos dos 4 Cards reutilizando tokens do tema
   const statsCards = useMemo(() => {
     let totalSpent = 0;
     let totalIncome = 0;
@@ -84,40 +81,40 @@ export default function StatsScreen() {
         title: "Total de saídas",
         value: `R$ ${totalSpent.toFixed(2)}`,
         subtext: `${expenseCount} saídas no período`,
-        subtextColor: "#FFB4AB",
+        subtextColor: theme.expense,
         iconName: { ios: "arrow.down.right", android: "trending_down", web: "trending_down" },
-        iconColor: "#FFB4AB",
+        iconColor: theme.expense,
       },
       {
         title: "Total de entradas",
         value: `R$ ${totalIncome.toFixed(2)}`,
         subtext: `${incomeCount} entradas no período`,
-        subtextColor: "#D2BBFF",
+        subtextColor: theme.income,
         iconName: { ios: "arrow.up.right", android: "trending_up", web: "trending_up" },
-        iconColor: "#D2BBFF",
+        iconColor: theme.income,
       },
       {
         title: "Taxa de poupança",
         value: `${savingsRate.toFixed(1)}%`,
         subtext: totalIncome > 0 ? "do total recebido" : "sem entradas no período",
-        subtextColor: "#CCC3D8",
+        subtextColor: theme.textSecondary,
         iconName: { ios: "piggybank", android: "savings", web: "savings" },
-        iconColor: "#B9C5F2",
+        iconColor: theme.chartPalette[2] || "#B9C5F2",
       },
       {
         title: "Maior gasto",
         value: topCategory,
         subtext: topCategoryAmount > 0 ? `${topCategoryPercent}% dos gastos (R$ ${topCategoryAmount.toFixed(2)})` : "Sem saídas no período",
-        subtextColor: "#CCC3D8",
+        subtextColor: theme.textSecondary,
         iconName: { ios: "chart.pie", android: "pie_chart", web: "pie_chart" },
-        iconColor: "#FFB4A3",
+        iconColor: theme.chartPalette[3] || "#FFB4A3",
       },
     ];
-  }, [filteredTransactions]);
+  }, [filteredTransactions, theme]);
 
   return (
     <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: colors.background }]}
+      style={[styles.safeArea, { backgroundColor: theme.background }]}
       edges={["left", "right"]}
     >
       <ScrollView
@@ -125,12 +122,12 @@ export default function StatsScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         {/* Header */}
-        <View style={styles.header}>
+        <View>
           <ThemedText type="title" style={styles.title}>
-            Análises Financeiras
+           Analytics
           </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-             Seu panorama financeiro
+          <ThemedText type="small" style={{ color: theme.textSecondary }}>
+            Seu panorama financeiro
           </ThemedText>
         </View>
 
@@ -152,12 +149,12 @@ export default function StatsScreen() {
                     styles.badge,
                     selectedFilter === option
                       ? {
-                          backgroundColor: "#7C3AED",
+                          backgroundColor: theme.badgeActiveBg,
                           borderColor: "transparent",
                         }
                       : {
-                          backgroundColor: "#272A2C",
-                          borderColor: "#2E2E33",
+                          backgroundColor: theme.badgeInactiveBg,
+                          borderColor: theme.badgeInactiveBorder,
                           borderWidth: 1,
                         },
                   ]}
@@ -166,8 +163,8 @@ export default function StatsScreen() {
                     style={[
                       styles.badgeText,
                       selectedFilter === option
-                        ? { color: "#FFFFFF" }
-                        : { color: "#94A3B8" },
+                        ? { color: theme.badgeActiveText }
+                        : { color: theme.badgeInactiveText },
                     ]}
                   >
                     {option}
@@ -180,8 +177,8 @@ export default function StatsScreen() {
 
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#8A56FF" />
-            <ThemedText type="small" style={{ color: "#94A3B8", marginTop: 12 }}>
+            <ActivityIndicator size="large" color={theme.primary} />
+            <ThemedText type="small" style={{ color: theme.textMuted, marginTop: 12 }}>
               Carregando análises do Firebase...
             </ThemedText>
           </View>
@@ -191,7 +188,7 @@ export default function StatsScreen() {
             <View style={styles.gridContainer}>
               <View style={styles.row}>
                 {/* Card 1 */}
-                <View style={styles.card}>
+                <View style={[styles.card, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
                   <View style={styles.cardHeader}>
                     <SymbolView
                       name={statsCards[0].iconName as any}
@@ -199,10 +196,10 @@ export default function StatsScreen() {
                       tintColor={statsCards[0].iconColor}
                       weight="bold"
                     />
-                    <Text style={styles.cardLabel}>{statsCards[0].title}</Text>
+                    <Text style={[styles.cardLabel, { color: theme.textSecondary }]}>{statsCards[0].title}</Text>
                   </View>
                   <View style={styles.cardContent}>
-                    <Text style={styles.cardValue}>{statsCards[0].value}</Text>
+                    <Text style={[styles.cardValue, { color: theme.text }]}>{statsCards[0].value}</Text>
                     <Text
                       style={[
                         styles.cardSubtext,
@@ -215,7 +212,7 @@ export default function StatsScreen() {
                 </View>
 
                 {/* Card 2 */}
-                <View style={styles.card}>
+                <View style={[styles.card, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
                   <View style={styles.cardHeader}>
                     <SymbolView
                       name={statsCards[1].iconName as any}
@@ -223,10 +220,10 @@ export default function StatsScreen() {
                       tintColor={statsCards[1].iconColor}
                       weight="bold"
                     />
-                    <Text style={styles.cardLabel}>{statsCards[1].title}</Text>
+                    <Text style={[styles.cardLabel, { color: theme.textSecondary }]}>{statsCards[1].title}</Text>
                   </View>
                   <View style={styles.cardContent}>
-                    <Text style={styles.cardValue}>{statsCards[1].value}</Text>
+                    <Text style={[styles.cardValue, { color: theme.text }]}>{statsCards[1].value}</Text>
                     <Text
                       style={[
                         styles.cardSubtext,
@@ -241,7 +238,7 @@ export default function StatsScreen() {
 
               <View style={styles.row}>
                 {/* Card 3 */}
-                <View style={styles.card}>
+                <View style={[styles.card, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
                   <View style={styles.cardHeader}>
                     <SymbolView
                       name={statsCards[2].iconName as any}
@@ -249,14 +246,14 @@ export default function StatsScreen() {
                       tintColor={statsCards[2].iconColor}
                       weight="bold"
                     />
-                    <Text style={styles.cardLabel}>{statsCards[2].title}</Text>
+                    <Text style={[styles.cardLabel, { color: theme.textSecondary }]}>{statsCards[2].title}</Text>
                   </View>
                   <View style={styles.cardContent}>
-                    <Text style={styles.cardValue}>{statsCards[2].value}</Text>
+                    <Text style={[styles.cardValue, { color: theme.text }]}>{statsCards[2].value}</Text>
                     <Text
                       style={[
                         styles.cardSubtext,
-                        { color: statsCards[2].subtextColor, opacity: 0.7 },
+                        { color: statsCards[2].subtextColor, opacity: 0.8 },
                       ]}
                     >
                       {statsCards[2].subtext}
@@ -265,7 +262,7 @@ export default function StatsScreen() {
                 </View>
 
                 {/* Card 4 */}
-                <View style={styles.card}>
+                <View style={[styles.card, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
                   <View style={styles.cardHeader}>
                     <SymbolView
                       name={statsCards[3].iconName as any}
@@ -273,14 +270,14 @@ export default function StatsScreen() {
                       tintColor={statsCards[3].iconColor}
                       weight="bold"
                     />
-                    <Text style={styles.cardLabel}>{statsCards[3].title}</Text>
+                    <Text style={[styles.cardLabel, { color: theme.textSecondary }]}>{statsCards[3].title}</Text>
                   </View>
                   <View style={styles.cardContent}>
-                    <Text style={styles.cardValue}>{statsCards[3].value}</Text>
+                    <Text style={[styles.cardValue, { color: theme.text }]}>{statsCards[3].value}</Text>
                     <Text
                       style={[
                         styles.cardSubtext,
-                        { color: statsCards[3].subtextColor, opacity: 0.7 },
+                        { color: statsCards[3].subtextColor, opacity: 0.8 },
                       ]}
                     >
                       {statsCards[3].subtext}
@@ -290,10 +287,10 @@ export default function StatsScreen() {
               </View>
             </View>
 
-            {/* Fluxo de Caixa */}
+            {/* Fluxo de caixa */}
             <CashFlowGraph transactions={filteredTransactions} />
 
-            {/* Distribuição por Categorias */}
+            {/* Distribuição por categorias */}
             <CategoriesGraph transactions={filteredTransactions} />
           </>
         )}
@@ -311,9 +308,6 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 120,
     gap: 20,
-  },
-  header: {
-    gap: 4,
   },
   title: {
     fontSize: 28,
@@ -349,9 +343,7 @@ const styles = StyleSheet.create({
   },
   card: {
     flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 24,
     padding: 20,
     justifyContent: "space-between",
@@ -369,12 +361,10 @@ const styles = StyleSheet.create({
   cardLabel: {
     fontSize: 14,
     fontWeight: "500",
-    color: "#CCC3D8",
   },
   cardValue: {
     fontSize: 22,
     fontWeight: "700",
-    color: "#E0E3E5",
   },
   cardSubtext: {
     fontSize: 12,

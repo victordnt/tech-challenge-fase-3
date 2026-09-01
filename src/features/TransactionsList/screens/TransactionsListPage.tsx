@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, TouchableOpacity, useColorScheme, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Badge, BadgeText } from '@gluestack-ui/themed';
 
 import { ThemedText } from '@/components/themed-text';
-import { Colors } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { SearchInput } from '@/components/search-input';
 import { TransactionList } from '@/features/TransactionsList/components/transaction-list';
 import { TransactionModal } from '@/features/TransactionsList/components/transaction-modal';
@@ -13,9 +13,7 @@ import { useTransactions } from '@/features/TransactionsList/contexts/transactio
 import type { Transaction } from '@/features/TransactionsList/types/finance';
 
 export default function TransactionsListPage() {
-    const colorScheme = useColorScheme();
-    const validColorScheme = colorScheme === 'dark' ? 'dark' : 'light';
-    const colors = Colors[validColorScheme];
+    const theme = useTheme();
 
     const { transactions, loading, deleteTransaction } = useTransactions();
     const [selectedFilter, setSelectedFilter] = useState('All');
@@ -63,7 +61,7 @@ export default function TransactionsListPage() {
     };
 
     return (
-        <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['left', 'right']}>
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['left', 'right']}>
             <View style={styles.container}>
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                     {/* Header */}
@@ -80,16 +78,16 @@ export default function TransactionsListPage() {
                                         style={[
                                             styles.badge,
                                             selectedFilter === option
-                                                ? { backgroundColor: '#7C3AED', borderColor: 'transparent' }
-                                                : { backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(255, 255, 255, 0.1)', borderWidth: 1 }
+                                                ? { backgroundColor: theme.badgeActiveBg, borderColor: 'transparent' }
+                                                : { backgroundColor: theme.badgeInactiveBg, borderColor: theme.badgeInactiveBorder, borderWidth: 1 }
                                         ]}
                                     >
                                         <BadgeText
                                             style={[
                                                 styles.badgeText,
                                                 selectedFilter === option
-                                                    ? { color: '#EDE0FF' }
-                                                    : { color: '#CCC3D8' }
+                                                    ? { color: theme.badgeActiveText }
+                                                    : { color: theme.badgeInactiveText }
                                             ]}
                                         >
                                             {option === 'All' ? 'Tudo' : option === 'Income' ? 'Entradas' : option === 'Expense' ? 'Saídas' : option}
@@ -103,8 +101,8 @@ export default function TransactionsListPage() {
                     {/* Conteúdo com Indicator de Loading ou Lista */}
                     {loading ? (
                         <View style={styles.loadingContainer}>
-                            <ActivityIndicator size="large" color="#8A56FF" />
-                            <ThemedText type="small" style={{ color: '#94A3B8', marginTop: 12 }}>
+                            <ActivityIndicator size="large" color={theme.primary} />
+                            <ThemedText type="small" style={{ color: theme.textMuted, marginTop: 12 }}>
                                 Carregando transações do Firebase...
                             </ThemedText>
                         </View>

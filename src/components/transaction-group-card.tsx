@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, ScrollView } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
+import { useTheme } from '@/hooks/use-theme';
 
 export interface MockTransaction {
     id: string;
@@ -16,16 +17,16 @@ interface TransactionGroupCardProps {
 }
 
 export function TransactionGroupCard({ transactions }: TransactionGroupCardProps) {
+    const theme = useTheme();
     const itemHeight = 72;
     const maxVisibleHeight = 3 * itemHeight;
-    const accentColor = '#D2BBFF'; 
 
     return (
         <View style={[
             styles.cardContainer,
             {
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                borderColor: 'rgba(255, 255, 255, 0.1)',
+                backgroundColor: theme.cardBg,
+                borderColor: theme.cardBorder,
             }
         ]}>
             <ScrollView
@@ -42,7 +43,7 @@ export function TransactionGroupCard({ transactions }: TransactionGroupCardProps
                 ) : (
                     transactions.map((item, index) => {
                         const isIncome = item.type === 'income';
-                        const amountColor = isIncome ? accentColor : '#FFFFFF';
+                        const amountColor = isIncome ? theme.income : theme.text;
                         
                         return (
                             <View 
@@ -52,16 +53,16 @@ export function TransactionGroupCard({ transactions }: TransactionGroupCardProps
                                     { 
                                         height: itemHeight,
                                         borderBottomWidth: index < transactions.length - 1 ? 1 : 0,
-                                        borderBottomColor: '#2E2E33',
+                                        borderBottomColor: theme.cardSeparator,
                                     }
                                 ]}
                             >
                                 <View style={styles.cardItemLeft}>
                                     <View>
-                                        <ThemedText type="default" style={styles.itemTitle}>
+                                        <ThemedText type="default" style={[styles.itemTitle, { color: theme.text }]}>
                                             {item.description}
                                         </ThemedText>
-                                        <ThemedText type="small" style={styles.itemSubtitle}>
+                                        <ThemedText type="small" style={[styles.itemSubtitle, { color: theme.textSecondary }]}>
                                             {item.time} • {item.category}
                                         </ThemedText>
                                     </View>
@@ -100,12 +101,10 @@ const styles = StyleSheet.create({
     itemTitle: {
         fontWeight: '500',
         fontSize: 15,
-        color: '#E0E3E5',
     },
     itemSubtitle: {
         fontSize: 12,
         marginTop: 2,
-        color: '#CCC3D8',
     },
     amount: {
         fontSize: 15,

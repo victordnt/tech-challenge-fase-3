@@ -21,7 +21,7 @@ import { PhotoPreviewModal } from '@/features/TransactionsList/components/photo-
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 
-import { FIXED_CATEGORIES } from '@/features/TransactionsList/constants/categories';
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '@/features/TransactionsList/constants/categories';
 import { SymbolView } from 'expo-symbols';
 
 interface TransactionModalProps {
@@ -39,7 +39,7 @@ export function TransactionModal({ visible, onClose, editingTransaction }: Trans
 
     const [type, setType] = useState<'income' | 'expense'>('income');
     const [amount, setAmount] = useState('');
-    const [category, setCategory] = useState<string>(FIXED_CATEGORIES[0]);
+    const [category, setCategory] = useState<string>(INCOME_CATEGORIES[0]);
     const [description, setDescription] = useState('');
     const [photo, setPhoto] = useState<string | null>(null);
     const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
@@ -47,11 +47,20 @@ export function TransactionModal({ visible, onClose, editingTransaction }: Trans
     const [isSaving, setIsSaving] = useState(false);
 
     const neonColor = isDark ? (theme.neon || '#A855F7') : (theme.lilac || '#C084FC');
+    const categoriesOptions = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+
+    const handleTypeChange = (newType: 'income' | 'expense') => {
+        setType(newType);
+        const options = newType === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+        if (!options.includes(category as any)) {
+            setCategory(options[0]);
+        }
+    };
 
     const resetForm = () => {
         setType('income');
         setAmount('');
-        setCategory(FIXED_CATEGORIES[0]);
+        setCategory(INCOME_CATEGORIES[0]);
         setDescription('');
         setPhoto(null);
         setShowCategoryDropdown(false);
@@ -61,9 +70,11 @@ export function TransactionModal({ visible, onClose, editingTransaction }: Trans
     useEffect(() => {
         if (editingTransaction) {
             const timer = setTimeout(() => {
-                setType(editingTransaction.type as 'income' | 'expense');
+                const txType = (editingTransaction.type || 'income') as 'income' | 'expense';
+                const options = txType === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+                setType(txType);
                 setAmount(editingTransaction.amount.toString());
-                setCategory(editingTransaction.category || FIXED_CATEGORIES[0]);
+                setCategory(editingTransaction.category || options[0]);
                 setDescription(editingTransaction.description);
                 setPhoto(editingTransaction.receipt?.url || null);
                 setShowCategoryDropdown(false);
@@ -173,7 +184,7 @@ export function TransactionModal({ visible, onClose, editingTransaction }: Trans
                                         <ThemedText type="small" style={styles.sectionLabel}>Tipo</ThemedText>
                                         <View style={[styles.typeButtons, { gap: 12 }]}>
                                             <TouchableOpacity
-                                                onPress={() => setType('income')}
+                                                onPress={() => handleTypeChange('income')}
                                                 disabled={isSaving}
                                                 style={[
                                                     styles.typeButton,
@@ -189,7 +200,7 @@ export function TransactionModal({ visible, onClose, editingTransaction }: Trans
                                                 </ThemedText>
                                             </TouchableOpacity>
                                             <TouchableOpacity
-                                                onPress={() => setType('expense')}
+                                                onPress={() => handleTypeChange('expense')}
                                                 disabled={isSaving}
                                                 style={[
                                                     styles.typeButton,
@@ -229,7 +240,7 @@ export function TransactionModal({ visible, onClose, editingTransaction }: Trans
                                         />
                                     </View>
 
-                                    {/* Categoria (Select com Opções Fixas) */}
+                                    {/* Categoria (Select com Opções Fixas de acordo com o tipo) */}
                                     <View style={styles.section}>
                                         <ThemedText type="small" style={styles.sectionLabel}>Categoria</ThemedText>
                                         <TouchableOpacity
@@ -263,7 +274,7 @@ export function TransactionModal({ visible, onClose, editingTransaction }: Trans
                                                 ]}
                                             >
                                                 <ScrollView style={{ maxHeight: 180 }} nestedScrollEnabled showsVerticalScrollIndicator>
-                                                    {FIXED_CATEGORIES.map((cat, idx) => {
+                                                    {categoriesOptions.map((cat, idx) => {
                                                         const isSelected = category === cat;
                                                         return (
                                                             <TouchableOpacity
@@ -277,7 +288,7 @@ export function TransactionModal({ visible, onClose, editingTransaction }: Trans
                                                                     styles.dropdownOption,
                                                                     {
                                                                         backgroundColor: isSelected ? 'rgba(138, 86, 255, 0.15)' : 'transparent',
-                                                                        borderBottomWidth: idx < FIXED_CATEGORIES.length - 1 ? 1 : 0,
+                                                                        borderBottomWidth: idx < categoriesOptions.length - 1 ? 1 : 0,
                                                                         borderBottomColor: theme.border,
                                                                     },
                                                                 ]}
