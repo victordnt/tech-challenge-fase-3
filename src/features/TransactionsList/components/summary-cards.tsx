@@ -3,6 +3,9 @@ import { useTheme } from '@/hooks/use-theme';
 import { StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+
+const AnimatedThemedView = Animated.createAnimatedComponent(ThemedView);
 
 interface SummaryCardsProps {
     totalIncome: number;
@@ -18,107 +21,109 @@ export function SummaryCards({ totalIncome, totalExpense, balance }: SummaryCard
     const neonColor = isDark ? (theme.neon || '#A855F7') : (theme.lilac || '#C084FC');
 
     return (
-        <View style={styles.container}>
-            {/* Card Entradas */}
-            <ThemedView
-                style={[
-                    styles.card,
-                    styles.incomeCard,
-                    {
-                        backgroundColor: isDark ? theme.backgroundElement : '#E0D5F5',
-                        borderColor: theme.success,
-                    },
-                ]}
+        <View style={styles.wrapper}>
+            <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.container}
             >
-                <ThemedText type="small" style={styles.label}>Entradas</ThemedText>
-                <ThemedText type="title" style={[styles.amount, { color: theme.success }]}>
-                    R$ {totalIncome.toFixed(2)}
-                </ThemedText>
-            </ThemedView>
+                {/* Card Entradas */}
+                <AnimatedThemedView
+                    entering={FadeInDown.duration(500).delay(100)}
+                    style={[
+                        styles.card,
+                        {
+                            backgroundColor: isDark ? theme.backgroundElement : '#E0D5F5',
+                            borderColor: theme.success,
+                        },
+                    ]}
+                >
+                    <ThemedText type="small" style={styles.label}>Entradas</ThemedText>
+                    <ThemedText type="title" style={[styles.amount, { color: theme.success }]}>
+                        R$ {totalIncome.toFixed(2)}
+                    </ThemedText>
+                </AnimatedThemedView>
 
-            {/* Card Saldo (Destaque) */}
-            <ThemedView
-                style={[
-                    styles.balanceCard,
-                    {
-                        backgroundColor: neonColor,
-                        shadowColor: neonColor,
-                        shadowOpacity: isDark ? 0.8 : 0.4,
-                        shadowRadius: isDark ? 20 : 12,
-                        elevation: isDark ? 15 : 10,
-                    },
-                ]}
-            >
-                <ThemedText type="small" style={[styles.balanceLabel, { color: isDark ? '#FFF' : '#1A1A2E' }]}>
-                    Saldo
-                </ThemedText>
-                <ThemedText type="title" style={[styles.balanceAmount, { color: isDark ? '#FFF' : '#1A1A2E' }]}>
-                    R$ {Math.abs(balance).toFixed(2)}
-                </ThemedText>
-                <ThemedText type="small" style={[styles.balanceStatus, { color: isDark ? '#FFF' : '#1A1A2E', opacity: 0.9 }]}>
-                    {balance >= 0 ? '✓ Positivo' : '✗ Negativo'}
-                </ThemedText>
-            </ThemedView>
+                {/* Card Saldo (Destaque) */}
+                <AnimatedThemedView
+                    entering={FadeInDown.duration(500).delay(200)}
+                    style={[
+                        styles.card,
+                        styles.balanceCard,
+                        {
+                            backgroundColor: isDark ? theme.backgroundElement : theme.primary + '15',
+                            borderColor: theme.primary,
+                        },
+                    ]}
+                >
+                    <ThemedText type="small" style={[styles.balanceLabel, { color: isDark ? '#FFF' : theme.primary }]}>
+                        Saldo
+                    </ThemedText>
+                    <ThemedText type="title" style={[styles.balanceAmount, { color: isDark ? '#FFF' : theme.primary }]}>
+                        R$ {Math.abs(balance).toFixed(2)}
+                    </ThemedText>
+                    <ThemedText type="small" style={[styles.balanceStatus, { color: isDark ? '#A0A0A0' : theme.textSecondary }]}>
+                        {balance >= 0 ? '✓ Positivo' : '✗ Negativo'}
+                    </ThemedText>
+                </AnimatedThemedView>
 
-            {/* Card Saídas */}
-            <ThemedView
-                style={[
-                    styles.card,
-                    styles.expenseCard,
-                    {
-                        backgroundColor: isDark ? theme.backgroundElement : '#F8E0F9',
-                        borderColor: theme.danger,
-                    },
-                ]}
-            >
-                <ThemedText type="small" style={styles.label}>Saídas</ThemedText>
-                <ThemedText type="title" style={[styles.amount, { color: theme.danger }]}>
-                    R$ {totalExpense.toFixed(2)}
-                </ThemedText>
-            </ThemedView>
+                {/* Card Saídas */}
+                <AnimatedThemedView
+                    entering={FadeInDown.duration(500).delay(300)}
+                    style={[
+                        styles.card,
+                        {
+                            backgroundColor: isDark ? theme.backgroundElement : '#F8E0F9',
+                            borderColor: theme.danger,
+                        },
+                    ]}
+                >
+                    <ThemedText type="small" style={styles.label}>Saídas</ThemedText>
+                    <ThemedText type="title" style={[styles.amount, { color: theme.danger }]}>
+                        R$ {totalExpense.toFixed(2)}
+                    </ThemedText>
+                </AnimatedThemedView>
+            </ScrollView>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        gap: 12,
+    wrapper: {
         marginBottom: 24,
     },
-    card: {
-        flex: 1,
-        padding: 16,
-        borderRadius: 12,
-        alignItems: 'center',
-        borderWidth: 2,
+    container: {
+        flexDirection: 'row',
+        gap: 16,
+        paddingHorizontal: 2, // Para evitar que a sombra (se houver) corte na borda
     },
-    incomeCard: {},
-    expenseCard: {},
-    balanceCard: {
-        flex: 1,
+    card: {
+        width: 150,
         padding: 16,
         borderRadius: 12,
-        alignItems: 'center',
+        alignItems: 'flex-start',
+        borderWidth: 1,
+        minHeight: 110,
         justifyContent: 'center',
-        minHeight: 120,
+    },
+    balanceCard: {
+        width: 160,
+        borderWidth: 2,
     },
     label: {
         fontSize: 12,
         fontWeight: '600',
         marginBottom: 8,
-        opacity: 0.7,
+        opacity: 0.8,
     },
     amount: {
         fontSize: 16,
         fontWeight: '700',
     },
     balanceLabel: {
-        fontSize: 12,
+        fontSize: 13,
         fontWeight: '600',
         marginBottom: 8,
-        opacity: 0.9,
     },
     balanceAmount: {
         fontSize: 20,

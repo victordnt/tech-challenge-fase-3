@@ -9,7 +9,6 @@ import { SummaryCards } from '@/features/TransactionsList/components/summary-car
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { SearchInput } from '@/components/search-input';
-import { TransactionButton } from '@/features/TransactionsList/components/transaction-button';
 import { TransactionList } from '@/features/TransactionsList/components/transaction-list';
 import { TransactionModal } from '@/features/TransactionsList/components/transaction-modal';
 import { Colors } from '@/constants/theme';
@@ -230,9 +229,6 @@ export default function DashboardScreen() {
                     </ScrollView>
                 )}
 
-                {/* FAB Button */}
-                <TransactionButton onPress={() => setIsModalVisible(true)} />
-
                 {/* Transaction Modal */}
                 <TransactionModal
                     visible={isModalVisible}
@@ -307,8 +303,9 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         paddingHorizontal: 20,
-        paddingBottom: 120,
-        gap: 20,
+        paddingTop: 12,
+        paddingBottom: 40,
+        gap: 24,
     },
     listTitle: {
         fontSize: 18,

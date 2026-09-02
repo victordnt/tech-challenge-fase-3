@@ -23,6 +23,7 @@ import { ThemedView } from '@/components/themed-view';
 
 import { FIXED_CATEGORIES } from '@/features/TransactionsList/constants/categories';
 import { SymbolView } from 'expo-symbols';
+import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
 
 interface TransactionModalProps {
     visible: boolean;
@@ -155,8 +156,9 @@ export function TransactionModal({ visible, onClose, editingTransaction }: Trans
                                 contentContainerStyle={styles.scrollContent}
                                 showsVerticalScrollIndicator={false}
                             >
-                                <ThemedView style={[styles.modalContent, { backgroundColor: theme.backgroundElement }]}>
-                                    {/* Header com X */}
+                                <Animated.View entering={SlideInDown.duration(400).springify()} exiting={SlideOutDown.duration(300)}>
+                                    <ThemedView style={[styles.modalContent, { backgroundColor: theme.backgroundElement }]}>
+                                        {/* Header com X */}
                                     <View style={styles.header}>
                                         <ThemedText type="title" style={styles.title}>
                                             {editingTransaction ? 'Editar Transação' : 'Nova Transação'}
@@ -372,8 +374,9 @@ export function TransactionModal({ visible, onClose, editingTransaction }: Trans
                                                 <ThemedText style={{ color: '#FFF', fontWeight: '600' }}>Confirmar</ThemedText>
                                             )}
                                         </TouchableOpacity>
-                                    </View>
-                                </ThemedView>
+                                        </View>
+                                    </ThemedView>
+                                </Animated.View>
                             </ScrollView>
                         </TouchableOpacity>
                     </KeyboardAvoidingView>
@@ -396,20 +399,20 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
     scrollView: {
-        maxHeight: 600,
+        maxHeight: '90%',
         width: '100%',
     },
     scrollContent: {
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: 20,
+        paddingVertical: 40,
     },
     modalContent: {
-        width: '90%',
+        width: '95%',
         maxWidth: 500,
-        borderRadius: 16,
+        borderRadius: 20,
         padding: 24,
-        gap: 16,
+        gap: 20,
     },
     header: {
         flexDirection: 'row',
@@ -434,9 +437,9 @@ const styles = StyleSheet.create({
     input: {
         borderWidth: 2,
         borderRadius: 8,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        fontSize: 14,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        fontSize: 15,
     },
     descriptionInput: {
         paddingVertical: 12,
@@ -458,9 +461,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 2,
         borderRadius: 8,
-        paddingHorizontal: 12,
-        paddingVertical: 12,
-        minHeight: 48,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        minHeight: 52,
     },
     dropdownContainer: {
         borderWidth: 2,
@@ -472,8 +475,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 14,
-        paddingVertical: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
     },
     photoLoading: {
         borderRadius: 8,
@@ -488,7 +491,7 @@ const styles = StyleSheet.create({
     },
     button: {
         flex: 1,
-        paddingVertical: 12,
+        paddingVertical: 14,
         borderRadius: 8,
         alignItems: 'center',
     },

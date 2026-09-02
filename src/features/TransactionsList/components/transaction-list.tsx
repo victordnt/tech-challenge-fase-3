@@ -8,6 +8,9 @@ import {
 } from 'react-native';
 import { PhotoPreviewModal } from '@/features/TransactionsList/components/photo-preview-modal';
 import { ThemedText } from '@/components/themed-text';
+import Animated, { FadeInUp, FadeOutDown, LinearTransition } from 'react-native-reanimated';
+
+const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
 interface TransactionListProps {
     transactions: Transaction[];
@@ -138,7 +141,10 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
                                 const formattedTime = formatTime(item.date);
 
                                 return (
-                                    <TouchableOpacity
+                                    <AnimatedTouchableOpacity
+                                        layout={LinearTransition}
+                                        entering={FadeInUp.duration(400)}
+                                        exiting={FadeOutDown.duration(300)}
                                         key={item.id}
                                         onPress={() => handleRowPress(item)}
                                         activeOpacity={0.7}
@@ -161,7 +167,7 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
                                         <ThemedText style={[styles.amount, { color: amountColor }]}>
                                             {isIncome ? '+' : '-'} R$ {Math.abs(item.amount).toFixed(2)}
                                         </ThemedText>
-                                    </TouchableOpacity>
+                                    </AnimatedTouchableOpacity>
                                 );
                             })}
                         </View>
