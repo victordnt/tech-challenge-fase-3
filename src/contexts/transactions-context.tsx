@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-import { addTransactionToFirebase, getTransactionsByUser } from '@/services/firebase/transactions-service';
+import { useAuth } from '@/contexts/auth-context';
+import { addTransactionToFirebase, subscribeToUserTransactions } from '@/services/firebase/transactions-service';
 import type { Transaction, TransactionFilters } from '@/types/finance';
 
 interface TransactionsContextValue {
@@ -10,7 +11,6 @@ interface TransactionsContextValue {
     setFilters: React.Dispatch<React.SetStateAction<TransactionFilters>>;
     addTransaction: (transaction: Transaction) => Promise<void>;
     updateTransaction: (id: string, transaction: Partial<Transaction>) => void;
-    loadUserTransactions: (userId: string) => Promise<void>;
     loading: boolean;
     setLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
@@ -21,27 +21,38 @@ export function TransactionsProvider({ children }: { children: React.ReactNode }
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [filters, setFilters] = useState<TransactionFilters>({});
     const [loading, setLoading] = useState(false);
+    const { user } = useAuth();
 
-    const loadUserTransactions = async (userId: string) => {
-        setLoading(true);
-        try {
-            const firebaseTransactions = await getTransactionsByUser(userId);
-            setTransactions(firebaseTransactions);
-        } catch (error) {
-            console.error('Erro ao carregar transações:', error);
+    useEffect(() => {
+        if (!user?.uid) {
             setTransactions([]);
-        } finally {
+            setFilters({});
             setLoading(false);
+            return;
         }
-    };
+
+        setLoading(true);
+
+        const unsubscribe = subscribeToUserTransactions(
+            user.uid,
+            (firebaseTransactions) => {
+                setTransactions(firebaseTransactions);
+                setLoading(false);
+            },
+            (error) => {
+                console.error('Erro ao carregar transações:', error);
+                setTransactions([]);
+                setLoading(false);
+            },
+        );
+
+        return unsubscribe;
+    }, [user?.uid]);
 
     const addTransaction = async (transaction: Transaction) => {
         try {
             // Salvar no Firebase
-            const newId = await addTransactionToFirebase(transaction);
-            // Atualizar o estado local com o ID do Firebase
-            const updatedTransaction = { ...transaction, id: newId };
-            setTransactions((current) => [updatedTransaction, ...current]);
+            await addTransactionToFirebase(transaction);
         } catch (error) {
             console.error('Erro ao adicionar transação:', error);
             throw error;
@@ -62,7 +73,6 @@ export function TransactionsProvider({ children }: { children: React.ReactNode }
             setFilters,
             addTransaction,
             updateTransaction,
-            loadUserTransactions,
             loading,
             setLoading,
         }),

@@ -5,6 +5,7 @@ import {
     deleteDoc,
     doc,
     getDocs,
+    onSnapshot,
     query,
     updateDoc,
     where
@@ -43,6 +44,32 @@ export async function getTransactionsByUser(userId: string): Promise<Transaction
     console.error('Erro ao buscar transações do Firebase:', error);
     throw error;
   }
+}
+
+export function subscribeToUserTransactions(
+  userId: string,
+  onChange: (transactions: Transaction[]) => void,
+  onError: (error: Error) => void,
+) {
+  const transactionsQuery = query(
+    collection(db, 'transactions'),
+    where('userId', '==', userId),
+  );
+
+  return onSnapshot(
+    transactionsQuery,
+    (snapshot) => {
+      const transactions = snapshot.docs
+        .map((document) => ({
+          ...document.data(),
+          id: document.id,
+        }) as Transaction)
+        .sort((first, second) => new Date(second.date).getTime() - new Date(first.date).getTime());
+
+      onChange(transactions);
+    },
+    onError,
+  );
 }
 
 export async function updateTransactionInFirebase(

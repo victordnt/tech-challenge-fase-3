@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, TouchableOpacity, useColorScheme, View } from 'react-native';
+import 'react-native-get-random-values';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -20,7 +21,7 @@ export default function DashboardScreen() {
     const validColorScheme = colorScheme === 'dark' ? 'dark' : 'light';
     const colors = Colors[validColorScheme];
     const { isLoading } = useAppContext();
-    const { transactions, filters, loadUserTransactions } = useTransactions();
+    const { transactions, filters } = useTransactions();
     const { signOut } = useAuth();
     const router = useRouter();
     const [logoutModalVisible, setLogoutModalVisible] = useState(false);
@@ -37,13 +38,6 @@ export default function DashboardScreen() {
         console.log("Firebase project:", auth.app.options.projectId);
         console.log("Firebase auth domain:", auth.app.options.authDomain);
     }, []);
-
-    // Carregar transações quando o usuário fizer login
-    useEffect(() => {
-        if (user?.uid) {
-            loadUserTransactions(user.uid);
-        }
-    }, [user?.uid, loadUserTransactions]);
 
     const handleLogoutPress = () => {
         setLogoutModalVisible(true);
