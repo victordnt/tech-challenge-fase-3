@@ -51,6 +51,10 @@ export function filterTransactions(transactions: Transaction[], filters: Transac
       }
     }
 
+    const transactionDay = transaction.date.slice(0, 10);
+    if (filters.startDate && transactionDay < filters.startDate) return false;
+    if (filters.endDate && transactionDay > filters.endDate) return false;
+
     return true;
   });
 }

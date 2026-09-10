@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { notifyTransactionSaved } from '@/services/notifications';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
 import {
     addTransactionToFirestore,
@@ -8,6 +9,7 @@ import {
 } from '@/features/TransactionsList/services/firestore';
 import type { Transaction, TransactionFilters } from '@/features/TransactionsList/types/finance';
 import { useAuth } from '@/features/UserProfile/contexts/auth-context';
+import { deleteReceipt } from '@/services/firebase/storage-service';
 
 interface TransactionsContextValue {
     transactions: Transaction[];
@@ -22,6 +24,9 @@ interface TransactionsContextValue {
     itemsPerPage: number;
     loading: boolean;
     error: string | null;
+    hasMore: boolean;
+    loadMore: () => void;
+    retry: () => void;
 }
 
 const TransactionsContext = createContext<TransactionsContextValue | undefined>(undefined);
@@ -34,6 +39,9 @@ export function TransactionsProvider({ children }: { children: React.ReactNode }
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const itemsPerPage = 10;
+    const [queryLimit, setQueryLimit] = useState(20);
+    const [hasMore, setHasMore] = useState(true);
+    const [retryToken, setRetryToken] = useState(0);
 
     // Carregar transações ao autenticar
     useEffect(() => {
@@ -42,6 +50,11 @@ export function TransactionsProvider({ children }: { children: React.ReactNode }
             const timer = setTimeout(() => {
                 setTransactions([]);
                 setError(null);
+                setQueryLimit(20);
+                setFilters({});
+                setCurrentPage(1);
+                setHasMore(false);
+                setLoading(false);
             }, 0);
             return () => clearTimeout(timer);
         }
@@ -52,23 +65,27 @@ export function TransactionsProvider({ children }: { children: React.ReactNode }
 
         // Usar listener em tempo real
         const unsubscribe = onTransactionsSnapshot(
+            queryLimit,
             (loadedTransactions) => {
                 setTransactions(loadedTransactions);
+                setHasMore(loadedTransactions.length === queryLimit);
                 setLoading(false);
             },
             (err) => {
-                setError(err.message);
+                setHasMore(false);
+                setError(err.message.includes('requires an index') ? 'As transações aguardam a criação do índice no Firebase. Tente novamente após a ativação do índice.' : err.message);
                 setLoading(false);
             }
         );
 
         return () => unsubscribe();
-    }, [user]);
+    }, [user, queryLimit, retryToken]);
 
     const addTransaction = async (transaction: Omit<Transaction, 'id' | 'userId'>) => {
         try {
             setError(null);
             const created = await addTransactionToFirestore(transaction);
+            if (user) void notifyTransactionSaved(user.uid).catch(() => undefined);
             setTransactions((prev) => {
                 if (prev.some((t) => t.id === created.id)) return prev;
                 return [created, ...prev];
@@ -81,6 +98,7 @@ export function TransactionsProvider({ children }: { children: React.ReactNode }
     };
 
     const updateTransaction = async (id: string, updates: Partial<Transaction>) => {
+        const previous = transactions;
         try {
             setError(null);
             setTransactions((prev) =>
@@ -88,6 +106,7 @@ export function TransactionsProvider({ children }: { children: React.ReactNode }
             );
             await updateTransactionInFirestore(id, updates);
         } catch (err) {
+            setTransactions(previous);
             const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar transação';
             setError(errorMessage);
             throw err;
@@ -95,19 +114,22 @@ export function TransactionsProvider({ children }: { children: React.ReactNode }
     };
 
     const deleteTransaction = async (id: string) => {
+        const previous = transactions;
+        const removed = transactions.find((item) => item.id === id);
         try {
             setError(null);
             setTransactions((prev) => prev.filter((item) => item.id !== id));
             await deleteTransactionFromFirestore(id);
+            await deleteReceipt(removed?.receipt?.storagePath).catch(() => undefined);
         } catch (err) {
+            setTransactions(previous);
             const errorMessage = err instanceof Error ? err.message : 'Erro ao deletar transação';
             setError(errorMessage);
             throw err;
         }
     };
 
-    const value = useMemo(
-        () => ({
+    const value = {
             transactions,
             setTransactions,
             filters,
@@ -120,9 +142,10 @@ export function TransactionsProvider({ children }: { children: React.ReactNode }
             itemsPerPage,
             loading,
             error,
-        }),
-        [transactions, filters, currentPage, loading, error]
-    );
+            hasMore,
+            loadMore: () => setQueryLimit((value) => value + 20),
+            retry: () => setRetryToken(value => value + 1),
+        };
 
     return <TransactionsContext.Provider value={value}>{children}</TransactionsContext.Provider>;
 }

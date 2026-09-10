@@ -1,5 +1,6 @@
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import React from 'react';
-import { StyleSheet, TouchableOpacity, View, useColorScheme, Platform } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, Platform } from 'react-native';
 import { SymbolView } from 'expo-symbols';
 
 import { Colors } from '@/constants/theme';

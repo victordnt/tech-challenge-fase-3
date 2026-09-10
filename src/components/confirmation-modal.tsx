@@ -1,10 +1,10 @@
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 import {
     Modal,
     Platform,
     StyleSheet,
     TouchableOpacity,
-    useColorScheme,
     View,
 } from 'react-native';
 import { ThemedText } from './themed-text';

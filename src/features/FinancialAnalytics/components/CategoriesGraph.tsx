@@ -1,3 +1,4 @@
+import { useTheme } from '@/hooks/use-theme';
 import type { Transaction } from "@/features/TransactionsList/types/finance";
 import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
@@ -18,6 +19,7 @@ const CATEGORY_COLORS = [
 ];
 
 export default function CategoriesGraph({ transactions = [] }: CategoriesGraphProps) {
+  const theme = useTheme();
   const { categoryList, totalExpense } = useMemo(() => {
     let total = 0;
     const totals: { [cat: string]: number } = {};
@@ -66,9 +68,9 @@ export default function CategoriesGraph({ transactions = [] }: CategoriesGraphPr
   }, [categoryList, circumference]);
 
   return (
-    <View style={[styles.card, styles.largeCard]}>
+    <View style={[styles.card, styles.largeCard, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
       <View style={styles.chartHeader}>
-        <Text style={styles.chartTitle}>Categorias de saída</Text>
+        <Text style={[styles.chartTitle, { color: theme.text }]}>Categorias de saída</Text>
       </View>
 
       <View style={styles.donutContainer}>
@@ -103,8 +105,8 @@ export default function CategoriesGraph({ transactions = [] }: CategoriesGraphPr
 
         {/* Overlay do Texto perfeitamente centralizado via Flexbox nativo */}
         <View style={styles.donutCenterOverlay} pointerEvents="none">
-          <Text style={styles.donutLabel}>Total saídas</Text>
-          <Text style={styles.donutValue}>
+          <Text style={[styles.donutLabel, { color: theme.text }]}>Total saídas</Text>
+          <Text style={[styles.donutValue, { color: theme.text }]}>
             R$ {totalExpense >= 1000 ? `${(totalExpense / 1000).toFixed(1)}k` : totalExpense.toFixed(2)}
           </Text>
         </View>
@@ -132,9 +134,9 @@ export default function CategoriesGraph({ transactions = [] }: CategoriesGraphPr
                     },
                   ]}
                 />
-                <Text style={styles.categoryName}>{cat.name}</Text>
+                <Text style={[styles.categoryName, { color: theme.text }]}>{cat.name}</Text>
               </View>
-              <Text style={styles.categoryValue}>
+              <Text style={[styles.categoryValue, { color: theme.text }]}>
                 {cat.percentage.toFixed(1)}% (R$ {cat.amount.toFixed(2)})
               </Text>
             </View>
@@ -159,7 +161,7 @@ const styles = StyleSheet.create({
   largeCard: {
     width: "100%",
     justifyContent: "flex-start",
-    minHeight: "auto",
+
   },
   chartHeader: {
     flexDirection: "row",
@@ -208,12 +210,15 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   categoryRow: {
+    flexWrap: "wrap",
+    gap: 6,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: 4,
   },
   categoryLeft: {
+    flexShrink: 1,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
@@ -224,6 +229,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   categoryName: {
+    flexShrink: 1,
     fontSize: 14,
     fontWeight: "500",
     color: "#E0E3E5",

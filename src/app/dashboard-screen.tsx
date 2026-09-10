@@ -1,6 +1,7 @@
-import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, TouchableOpacity, useColorScheme, View } from 'react-native';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+
+import { useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Badge, BadgeText } from '@gluestack-ui/themed';
 
@@ -12,19 +13,20 @@ import { SearchInput } from '@/components/search-input';
 import { TransactionList } from '@/features/TransactionsList/components/transaction-list';
 import { TransactionModal } from '@/features/TransactionsList/components/transaction-modal';
 import { Colors } from '@/constants/theme';
-import { useAuth } from '@/features/UserProfile/contexts/auth-context';
+
 import { useTransactions } from '@/features/TransactionsList/contexts/transactions-context';
 import { calculateDashboardSummary, filterTransactions } from '@/features/TransactionsList/services/finance';
-import { auth } from '@/services/firebase/config';
 import type { Transaction } from '@/features/TransactionsList/types/finance';
+import CashFlowGraph from '@/features/FinancialAnalytics/components/CashFlowGraph';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 
 export default function DashboardScreen() {
     const colorScheme = useColorScheme();
     const validColorScheme = colorScheme === 'dark' ? 'dark' : 'light';
     const colors = Colors[validColorScheme];
-    const { transactions, filters, setFilters, currentPage, setCurrentPage, itemsPerPage, loading: transactionsLoading } = useTransactions();
-    const { signOut } = useAuth();
-    const router = useRouter();
+    const { transactions, filters, setFilters, currentPage, setCurrentPage, itemsPerPage, loading: transactionsLoading, error, hasMore, loadMore, retry } = useTransactions();
+
+
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
     const { deleteTransaction } = useTransactions();
@@ -78,37 +80,6 @@ export default function DashboardScreen() {
         }
     };
 
-    useEffect(() => {
-        console.log("Firebase project:", auth.app.options.projectId);
-    }, []);
-
-    const handleLogout = () => {
-        Alert.alert(
-            'Sair',
-            'Tem certeza que deseja sair da sua conta?',
-            [
-                {
-                    text: 'Cancelar',
-                    onPress: () => { },
-                    style: 'cancel',
-                },
-                {
-                    text: 'Sair',
-                    onPress: async () => {
-                        try {
-                            await signOut();
-                            router.replace('/login');
-                        } catch (error) {
-                            const errorMessage = error instanceof Error ? error.message : 'Erro ao sair da conta';
-                            Alert.alert('Erro', errorMessage);
-                        }
-                    },
-                    style: 'destructive',
-                },
-            ],
-        );
-    };
-
     const handleEdit = (transaction: Transaction) => {
         setEditingTransaction(transaction);
         setIsModalVisible(true);
@@ -143,16 +114,10 @@ export default function DashboardScreen() {
                                 setEditingTransaction(null);
                                 setIsModalVisible(true);
                             }}
-                            style={styles.newTransactionButton}
+                            style={[styles.newTransactionButton, { flex: 1 }]}
                             activeOpacity={0.8}
                         >
                             <ThemedText style={styles.newTransactionButtonText}>+ Nova Transação</ThemedText>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            onPress={handleLogout}
-                            style={[styles.logoutButton, { borderColor: colors.danger }]}
-                        >
-                            <ThemedText style={[styles.logoutButtonText, { color: colors.danger }]}>Sair</ThemedText>
                         </TouchableOpacity>
                     </ThemedView>
                 </ThemedView>
@@ -164,6 +129,7 @@ export default function DashboardScreen() {
                     </View>
                 ) : (
                     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+                        {error ? <View style={{ gap: 8 }}><ThemedText accessibilityRole="alert" style={{ color: colors.danger }}>{error}</ThemedText><TouchableOpacity accessibilityRole="button" onPress={retry} style={{ paddingVertical: 12 }}><ThemedText style={{ color: colors.primary }}>Tentar novamente</ThemedText></TouchableOpacity></View> : null}
                         {/* Search Bar */}
                         <SearchInput
                             value={filters.search || ''}
@@ -184,7 +150,7 @@ export default function DashboardScreen() {
                                                 styles.badge,
                                                 activeFilter === option
                                                     ? { backgroundColor: '#8A56FF', borderColor: 'transparent' }
-                                                    : { backgroundColor: '#1E1E20', borderColor: '#2E2E33', borderWidth: 1 }
+                                                    : { backgroundColor: colors.backgroundElement, borderColor: colors.border, borderWidth: 1 }
                                             ]}
                                         >
                                             <BadgeText
@@ -210,6 +176,10 @@ export default function DashboardScreen() {
                             balance={summary.balance}
                         />
 
+                        <Animated.View entering={FadeInUp.duration(450)}>
+                            <CashFlowGraph transactions={filteredTransactions} />
+                        </Animated.View>
+
                         {/* Transactions List */}
                         <ThemedText type="title" style={styles.listTitle}>Transações</ThemedText>
                         <TransactionList
@@ -218,6 +188,7 @@ export default function DashboardScreen() {
                             onDelete={handleDelete}
                         />
 
+                        {hasMore ? <TouchableOpacity onPress={loadMore} style={[styles.newTransactionButton, { marginTop: 12 }]}><ThemedText style={{ color: '#FFFFFF' }}>Carregar mais transações</ThemedText></TouchableOpacity> : null}
                         {/* Pagination */}
                         {totalPages > 1 && (
                             <PaginationFooter
@@ -251,15 +222,17 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     header: {
+        width: '100%',
+        maxWidth: 1000,
+        alignSelf: 'center',
         paddingHorizontal: 20,
         paddingVertical: 12,
         gap: 12,
-        flexDirection: 'row',
-        alignItems: 'flex-start',
+        flexDirection: 'column',
+        alignItems: 'stretch',
         justifyContent: 'space-between',
     },
     headerLeft: {
-        flex: 1,
         gap: 4,
     },
     headerRight: {
@@ -269,29 +242,19 @@ const styles = StyleSheet.create({
     },
     headerTitle: {
         fontSize: 28,
+        lineHeight: 34,
         fontWeight: '700',
     },
     newTransactionButton: {
         backgroundColor: '#7C3AED',
         borderRadius: 8,
         paddingHorizontal: 14,
-        paddingVertical: 8,
+        paddingVertical: 12,
         alignItems: 'center',
         justifyContent: 'center',
     },
     newTransactionButtonText: {
         color: '#FFFFFF',
-        fontSize: 14,
-        fontWeight: '600',
-    },
-    logoutButton: {
-        marginRight: 20,
-        borderWidth: 1.5,
-        borderRadius: 8,
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-    },
-    logoutButtonText: {
         fontSize: 14,
         fontWeight: '600',
     },
@@ -304,7 +267,10 @@ const styles = StyleSheet.create({
     scrollContent: {
         paddingHorizontal: 20,
         paddingTop: 12,
-        paddingBottom: 40,
+        paddingBottom: 32,
+        width: '100%',
+        maxWidth: 1000,
+        alignSelf: 'center',
         gap: 24,
     },
     listTitle: {

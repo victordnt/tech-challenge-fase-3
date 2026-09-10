@@ -1,7 +1,8 @@
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/features/UserProfile/contexts/auth-context';
 import { Redirect } from 'expo-router';
-import { ActivityIndicator, useColorScheme, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
 export default function HomeRedirect() {
   const { user, loading } = useAuth();

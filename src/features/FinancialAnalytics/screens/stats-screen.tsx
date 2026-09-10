@@ -1,9 +1,9 @@
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import {
   StyleSheet,
   ScrollView,
   View,
   Text,
-  useColorScheme,
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
@@ -191,7 +191,7 @@ export default function StatsScreen() {
             <View style={styles.gridContainer}>
               <View style={styles.row}>
                 {/* Card 1 */}
-                <View style={styles.card}>
+                <View style={[styles.card, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
                   <View style={styles.cardHeader}>
                     <SymbolView
                       name={statsCards[0].iconName as any}
@@ -199,14 +199,14 @@ export default function StatsScreen() {
                       tintColor={statsCards[0].iconColor}
                       weight="bold"
                     />
-                    <Text style={styles.cardLabel}>{statsCards[0].title}</Text>
+                    <Text style={[styles.cardLabel, { color: colors.text }]}>{statsCards[0].title}</Text>
                   </View>
                   <View style={styles.cardContent}>
-                    <Text style={styles.cardValue}>{statsCards[0].value}</Text>
+                    <Text style={[styles.cardValue, { color: colors.text }]}>{statsCards[0].value}</Text>
                     <Text
                       style={[
                         styles.cardSubtext,
-                        { color: statsCards[0].subtextColor },
+                        { color: colors.textSecondary },
                       ]}
                     >
                       {statsCards[0].subtext}
@@ -223,14 +223,14 @@ export default function StatsScreen() {
                       tintColor={statsCards[1].iconColor}
                       weight="bold"
                     />
-                    <Text style={styles.cardLabel}>{statsCards[1].title}</Text>
+                    <Text style={[styles.cardLabel, { color: colors.text }]}>{statsCards[1].title}</Text>
                   </View>
                   <View style={styles.cardContent}>
-                    <Text style={styles.cardValue}>{statsCards[1].value}</Text>
+                    <Text style={[styles.cardValue, { color: colors.text }]}>{statsCards[1].value}</Text>
                     <Text
                       style={[
                         styles.cardSubtext,
-                        { color: statsCards[1].subtextColor },
+                        { color: colors.textSecondary },
                       ]}
                     >
                       {statsCards[1].subtext}
@@ -249,14 +249,14 @@ export default function StatsScreen() {
                       tintColor={statsCards[2].iconColor}
                       weight="bold"
                     />
-                    <Text style={styles.cardLabel}>{statsCards[2].title}</Text>
+                    <Text style={[styles.cardLabel, { color: colors.text }]}>{statsCards[2].title}</Text>
                   </View>
                   <View style={styles.cardContent}>
-                    <Text style={styles.cardValue}>{statsCards[2].value}</Text>
+                    <Text style={[styles.cardValue, { color: colors.text }]}>{statsCards[2].value}</Text>
                     <Text
                       style={[
                         styles.cardSubtext,
-                        { color: statsCards[2].subtextColor, opacity: 0.7 },
+                        { color: colors.textSecondary, opacity: 0.7 },
                       ]}
                     >
                       {statsCards[2].subtext}
@@ -273,14 +273,14 @@ export default function StatsScreen() {
                       tintColor={statsCards[3].iconColor}
                       weight="bold"
                     />
-                    <Text style={styles.cardLabel}>{statsCards[3].title}</Text>
+                    <Text style={[styles.cardLabel, { color: colors.text }]}>{statsCards[3].title}</Text>
                   </View>
                   <View style={styles.cardContent}>
-                    <Text style={styles.cardValue}>{statsCards[3].value}</Text>
+                    <Text style={[styles.cardValue, { color: colors.text }]}>{statsCards[3].value}</Text>
                     <Text
                       style={[
                         styles.cardSubtext,
-                        { color: statsCards[3].subtextColor, opacity: 0.7 },
+                        { color: colors.textSecondary, opacity: 0.7 },
                       ]}
                     >
                       {statsCards[3].subtext}
@@ -348,12 +348,13 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   card: {
+    minWidth: 0,
     flex: 1,
     backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 24,
-    padding: 20,
+    padding: 16,
     justifyContent: "space-between",
     minHeight: 146,
   },
@@ -367,12 +368,13 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   cardLabel: {
+    flexShrink: 1,
     fontSize: 14,
     fontWeight: "500",
     color: "#CCC3D8",
   },
   cardValue: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: "700",
     color: "#E0E3E5",
   },

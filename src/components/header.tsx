@@ -1,5 +1,6 @@
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import React from 'react';
-import { StyleSheet, View, Text, useColorScheme, Platform } from 'react-native';
+import { StyleSheet, View, Text, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
 
@@ -9,7 +10,7 @@ export function AppHeader() {
     const colors = Colors[validColorScheme];
     const insets = useSafeAreaInsets();
 
-    const brandColor = '#D2BBFF';
+    const brandColor = colors.primary;
 
     return (
         <View style={[
@@ -46,15 +47,15 @@ const styles = StyleSheet.create({
         })
     },
     content: {
-        height: 52,
+        height: 44,
         alignItems: 'center',
         justifyContent: 'center',
         position: 'relative',
     },
     title: {
         fontSize: 16,
-        fontWeight: '400',
-        letterSpacing: -0.8,
+        fontWeight: '800',
+        letterSpacing: 3,
         // Font style rounded or sans if available
         fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
     },

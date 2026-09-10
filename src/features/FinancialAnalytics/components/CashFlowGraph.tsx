@@ -1,3 +1,4 @@
+import { useTheme } from '@/hooks/use-theme';
 import type { Transaction } from "@/features/TransactionsList/types/finance";
 import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
@@ -8,6 +9,7 @@ interface CashFlowGraphProps {
 }
 
 export default function CashFlowGraph({ transactions = [] }: CashFlowGraphProps) {
+    const theme = useTheme();
     // Processar transações em 5 períodos (barras)
     const data = useMemo(() => {
         const buckets = Array.from({ length: 5 }, (_, i) => ({
@@ -57,9 +59,9 @@ export default function CashFlowGraph({ transactions = [] }: CashFlowGraphProps)
     const baseLineY = 130;
 
     return (
-        <View style={[styles.card, styles.largeCard]}>
+        <View style={[styles.card, styles.largeCard, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
             <View style={styles.chartHeader}>
-                <Text style={styles.chartTitle}>Fluxo de caixa</Text>
+                <Text style={[styles.chartTitle, { color: theme.textSecondary }]}>Fluxo de caixa</Text>
             </View>
 
             <View style={styles.barChartContainer}>
@@ -76,20 +78,20 @@ export default function CashFlowGraph({ transactions = [] }: CashFlowGraphProps)
                     </Defs>
 
                     {/* Y Axis Grid Lines & Labels */}
-                    <SvgText x={35} y={24} fill="#CCC3D8" fontSize={10} textAnchor="end">
+                    <SvgText x={35} y={24} fill={theme.textSecondary} fontSize={10} textAnchor="end">
                         R$ {Math.round(maxVal)}
                     </SvgText>
                     <Line x1="45" y1="20" x2="330" y2="20" stroke="rgba(255, 255, 255, 0.05)" strokeDasharray="3 3" />
 
-                    <SvgText x={35} y={79} fill="#CCC3D8" fontSize={10} textAnchor="end">
+                    <SvgText x={35} y={79} fill={theme.textSecondary} fontSize={10} textAnchor="end">
                         R$ {Math.round(maxVal / 2)}
                     </SvgText>
                     <Line x1="45" y1="75" x2="330" y2="75" stroke="rgba(255, 255, 255, 0.05)" strokeDasharray="3 3" />
 
-                    <SvgText x={35} y={134} fill="#CCC3D8" fontSize={10} textAnchor="end">
+                    <SvgText x={35} y={134} fill={theme.textSecondary} fontSize={10} textAnchor="end">
                         R$ 0
                     </SvgText>
-                    <Line x1="45" y1="130" x2="330" y2="130" stroke="rgba(255, 255, 255, 0.1)" />
+                    <Line x1="45" y1="130" x2="330" y2="130" stroke={theme.border} />
 
                     {/* Render Dynamic Bars for 5 Periods */}
                     {data.map((b, i) => {
@@ -107,7 +109,7 @@ export default function CashFlowGraph({ transactions = [] }: CashFlowGraphProps)
                                     x={startX}
                                     y={incY}
                                     width={14}
-                                    height={Math.max(4, incHeight)}
+                                    height={incHeight}
                                     rx={4}
                                     fill="url(#incomeGrad)"
                                 />
@@ -116,7 +118,7 @@ export default function CashFlowGraph({ transactions = [] }: CashFlowGraphProps)
                                     x={startX + 18}
                                     y={expY}
                                     width={14}
-                                    height={Math.max(4, expHeight)}
+                                    height={expHeight}
                                     rx={4}
                                     fill="url(#expenseGrad)"
                                 />
@@ -127,22 +129,22 @@ export default function CashFlowGraph({ transactions = [] }: CashFlowGraphProps)
 
                 {/* Week/Period labels */}
                 <View style={styles.weekLabelsContainer}>
-                    <Text style={styles.xAxisLabel}>P1</Text>
-                    <Text style={styles.xAxisLabel}>P2</Text>
-                    <Text style={styles.xAxisLabel}>P3</Text>
-                    <Text style={styles.xAxisLabel}>P4</Text>
-                    <Text style={styles.xAxisLabel}>P5</Text>
+                    <Text style={[styles.xAxisLabel, { color: theme.textSecondary }]}>P1</Text>
+                    <Text style={[styles.xAxisLabel, { color: theme.textSecondary }]}>P2</Text>
+                    <Text style={[styles.xAxisLabel, { color: theme.textSecondary }]}>P3</Text>
+                    <Text style={[styles.xAxisLabel, { color: theme.textSecondary }]}>P4</Text>
+                    <Text style={[styles.xAxisLabel, { color: theme.textSecondary }]}>P5</Text>
                 </View>
             </View>
 
             <View style={styles.legendContainer}>
                 <View style={styles.legendItem}>
                     <View style={[styles.legendDot, { backgroundColor: '#D2BBFF' }]} />
-                    <Text style={styles.legendText}>Entradas</Text>
+                    <Text style={[styles.legendText, { color: theme.textSecondary }]}>Entradas</Text>
                 </View>
                 <View style={styles.legendItem}>
                     <View style={[styles.legendDot, { backgroundColor: '#FFB4AB' }]} />
-                    <Text style={styles.legendText}>Saídas</Text>
+                    <Text style={[styles.legendText, { color: theme.textSecondary }]}>Saídas</Text>
                 </View>
             </View>
         </View>
@@ -163,7 +165,7 @@ const styles = StyleSheet.create({
     largeCard: {
         width: '100%',
         justifyContent: 'flex-start',
-        minHeight: 'auto',
+
     },
     chartHeader: {
         flexDirection: 'row',
@@ -192,7 +194,7 @@ const styles = StyleSheet.create({
     xAxisLabel: {
         fontSize: 11,
         color: '#CCC3D8',
-        width: 50,
+        flex: 1,
         textAlign: 'center',
     },
     legendContainer: {

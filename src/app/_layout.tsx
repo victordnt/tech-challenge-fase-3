@@ -1,8 +1,5 @@
-import { auth } from "@/services/firebase/config";
 import { DarkTheme, DefaultTheme, Slot, ThemeProvider } from 'expo-router';
-// eslint-disable-next-line import/namespace
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from "react";
 import { GluestackUIProvider } from '@gluestack-ui/themed';
 import { config } from '@gluestack-ui/config';
 
@@ -11,7 +8,6 @@ import { AppProvider, useAppContext } from '@/contexts/app-context';
 import { AuthProvider } from '@/features/UserProfile/contexts/auth-context';
 import { TransactionsProvider } from '@/features/TransactionsList/contexts/transactions-context';
 
-// eslint-disable-next-line import/namespace
 SplashScreen.preventAutoHideAsync();
 
 const CustomDarkTheme = {
@@ -26,7 +22,7 @@ const CustomDefaultTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    background: '#101415',
+    background: '#F6F5FA',
   },
 };
 
@@ -44,11 +40,6 @@ export default function TabLayout() {
 
 function AppLayout() {
   const { theme } = useAppContext();
-
-  useEffect(() => {
-    console.log("LAYOUT MONTADO");
-    console.log("projectId:", auth.app.options.projectId);
-  }, []);
 
   return (
     <ThemeProvider value={theme === 'dark' ? CustomDarkTheme : CustomDefaultTheme}>

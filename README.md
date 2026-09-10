@@ -1,6 +1,13 @@
 # Tech Challenge Fase 3
 
-Aplicação mobile de gerenciamento financeiro pessoal em React Native com Expo Router.
+Aplicação mobile de gerenciamento financeiro pessoal em React Native, Expo Router e Firebase. Inclui autenticação, dashboard, análises, filtros, paginação e recibos no Firebase Storage.
+
+## Pré-requisitos
+
+- Node.js 22.13 ou superior
+- npm
+- Um projeto no Firebase
+- Expo Go ou emulador Android/iOS para os testes mobile
 
 ## Como iniciar
 
@@ -47,7 +54,7 @@ O app precisa da configuração do Firebase para funcionar. Para obtê-la:
 1. Acesse o [Firebase Console](https://console.firebase.google.com/) e selecione o seu projeto.
 2. Abra **Configurações do projeto** pelo ícone de engrenagem.
 3. Na aba **Geral**, em **Seus apps**, localize ou crie um app **Web** (`</>`).
-4. Em **Configuração do SDK**, copie os valores do objeto `firebaseConfig` para um arquivo `.env` na raiz:
+4. Em **Configuração do SDK**, copie os valores do objeto `firebaseConfig` para um arquivo `.env` na raiz (use `.env.example` como modelo):
 
 | Variável no `.env` | Campo do `firebaseConfig` |
 | --- | --- |
@@ -73,51 +80,60 @@ No Firebase Authentication, ative o método de login usado pela aplicação, com
 
 Os valores acima identificam o app e não são senhas. Mesmo assim, nunca coloque no `.env` chaves privadas ou credenciais administrativas e não versione esse arquivo no Git.
 
-## Criar o banco de dados
+## Configurar Firestore e Storage
 
 O app salva as transações no **Cloud Firestore**:
 
 1. No [Firebase Console](https://console.firebase.google.com/), selecione o projeto.
 2. Acesse **Firestore Database** e clique em **Criar banco de dados**.
 3. Escolha uma região próxima dos usuários e confirme a criação.
-4. Em **Authentication > Método de login**, ative **E-mail/senha**.
+4. Acesse **Storage**, clique em **Começar** e use uma região compatível com o banco.
+5. Em **Authentication > Método de login**, ative **E-mail/senha**.
 
-A coleção `transactions` será criada automaticamente quando a primeira transação for salva. Se o app não conseguir gravar ou ler dados, verifique também as regras do Firestore e se o usuário está logado.
+A coleção `transactions` será criada automaticamente quando a primeira transação for salva. Os recibos ficam em `receipts/{userId}/{receiptId}` no Storage.
 
-No arquivo `src/app/_layout.tsx`, o trecho abaixo imprime o projeto conectado no terminal:
+Instale a CLI do Firebase, autentique e vincule o projeto:
 
-```ts
-console.log("projectId:", auth.app.options.projectId);
+```bash
+npm install -g firebase-tools
+firebase login
+firebase use --add
 ```
 
-Use esse log apenas para confirmar se o `.env` aponta para o projeto correto. Ele não cria o banco e não salva transações. Após alterar o `.env` ou as configurações do Firebase, reinicie com `npx expo start -c`.
+Implante regras e índices versionados:
 
-## REGRAS FIRESTORE:
-``` javascript
-rules_version = '2';
-
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /transactions/{transactionId} {
-      allow create: if request.auth != null
-        && request.resource.data.userId == request.auth.uid;
-
-      allow read: if request.auth != null
-        && resource.data.userId == request.auth.uid;
-
-      allow update: if request.auth != null
-        && resource.data.userId == request.auth.uid
-        && request.resource.data.userId == request.auth.uid;
-
-      allow delete: if request.auth != null
-        && resource.data.userId == request.auth.uid;
-    }
-  }
+```bash
+firebase deploy --only firestore:rules,firestore:indexes,storage
 ```
+
+Os arquivos implantados são `firestore.rules`, `firestore.indexes.json` e `storage.rules`. As regras isolam dados por usuário e limitam os anexos a imagens de até 5 MB.
+
+## Verificações antes da entrega
+
+```bash
+npm run validate
+```
+
+Depois valide em um dispositivo físico pelo menos: cadastro, login, criação/edição/exclusão, filtros de data, paginação, câmera, galeria, visualização do recibo e isolamento entre duas contas.
+
+## Permissões mobile
+
+O plugin `expo-image-picker` está configurado no `app.json` com mensagens de câmera e galeria. A câmera não existe no simulador iOS; para esse fluxo, use um aparelho físico.
+
+## Estrutura dos dados
+
+Uma transação possui `userId`, tipo, valor, categoria, descrição, data e, opcionalmente, metadados do recibo. O documento guarda apenas a URL do download e o caminho do Storage — a imagem não é armazenada como Base64 no Firestore.
+
+## Solução de problemas
+
+- Após alterar `.env`, dependências ou configuração nativa, execute `npx expo start -c`.
+- Se a consulta solicitar um índice, implante `firestore.indexes.json`.
+- Se um upload falhar, confirme se o Storage foi criado e se `storage.rules` foi implantado.
+- Se houver `permission-denied`, confirme a sessão do usuário e implante as regras do repositório.
+
 ## Observações importantes
 
-- A autenticação do Firebase possui configurações separadas para cada plataforma. No web, o projeto usa a persistência padrão do navegador. No Android e no iOS, usa `AsyncStorage` para manter a sessão do usuário. Os arquivos `config.web.ts` e `config.native.ts` são selecionados automaticamente pelo Expo.
-- A criação de IDs das transações usa UUID v4. O pacote `react-native-get-random-values` fornece `crypto.getRandomValues` no React Native, que é necessário para o `uuid` funcionar no Android e no iOS.
+- No web, a autenticação usa a persistência do navegador. No Android e iOS, usa `AsyncStorage`; a seleção ocorre em `src/services/firebase/config.ts`.
 - Ao instalar dependências novas ou alterar a configuração de plataforma, reinicie o Expo limpando o cache:
 
    ```bash
@@ -133,10 +149,33 @@ src/
 ├── constants/        # Constantes da aplicação
 ├── contexts/         # Context API (app, auth, transactions)
 ├── hooks/            # Hooks customizados
-├── services/         # Serviços (auth, finance, firebase)
-│   ├── auth/         # Operações de autenticação
-│   └── firebase/     # Configuração do Firebase por plataforma
+├── services/         # Configuração e serviços do Firebase
 ├── types/            # Tipos TypeScript
 └── global.css        # Estilos globais
 ```
 
+
+## Perfil, tema e notificações
+
+Na aba Perfil, é possível editar nome e e-mail, escolher tema claro ou escuro e acessar Privacidade e segurança. A mudança de e-mail exige a senha atual e só é aplicada após confirmar o link enviado ao novo endereço. A mudança de senha exige reautenticação. O botão Sair usa uma confirmação que funciona na web e no celular.
+
+O tema é salvo neste dispositivo. No Android/iOS, as notificações são lembretes locais diários às 20h; no navegador compatível, são avisos ao salvar uma transação com o site aberto (HTTPS ou localhost). A permissão é solicitada ao ativar. Não há push remoto nem avisos web com o site fechado. A saída da conta desativa as preferências de avisos e tenta cancelar o lembrete local.
+
+Depois de instalar dependências, reinicie o Expo. Em builds nativos próprios, gere um novo build para incluir o módulo expo-notifications. Valide permissões e recebimento em aparelho físico.
+
+Testes isolados dos serviços de conta e notificações:
+
+```bash
+npm run test:settings
+```
+
+### Erro de índice do Firestore
+
+O índice em firestore.indexes.json combina userId crescente com date decrescente. O arquivo local precisa ser publicado usando uma conta com acesso ao projeto:
+
+```bash
+npx firebase-tools login
+npx firebase-tools deploy --only firestore:indexes --project techchallengefase3-mavi
+```
+
+Alternativamente, abra o link fornecido pelo erro no Firebase Console e confirme a criação. Aguarde o índice ficar ativo e tente carregar as transações novamente. Um erro 403 de serviceusage.services.use indica que a conta da CLI não tem permissão no projeto; use uma conta autorizada ou peça o acesso ao administrador.

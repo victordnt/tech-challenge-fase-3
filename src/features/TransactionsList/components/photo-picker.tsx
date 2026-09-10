@@ -35,12 +35,14 @@ export function PhotoPicker({ photo, onPhotoSelected, onPhotoRemoved, onPhotoPre
                 allowsEditing: true,
                 aspect: [4, 3],
                 quality: 0.8,
-                base64: true,
             });
 
-            if (!result.canceled && result.assets[0].base64) {
-                const base64 = `data:image/jpeg;base64,${result.assets[0].base64}`;
-                onPhotoSelected(base64);
+            if (!result.canceled && result.assets[0].uri) {
+                if ((result.assets[0].fileSize || 0) > 5 * 1024 * 1024) {
+                    Alert.alert('Arquivo muito grande', 'Selecione uma imagem de até 5 MB.');
+                    return;
+                }
+                onPhotoSelected(result.assets[0].uri);
             }
         } catch (error) {
             Alert.alert('Erro', 'Não foi possível selecionar a imagem');
@@ -53,16 +55,23 @@ export function PhotoPicker({ photo, onPhotoSelected, onPhotoRemoved, onPhotoPre
     const takePhoto = async () => {
         try {
             setLoading(true);
+            const permission = await ImagePicker.requestCameraPermissionsAsync();
+            if (!permission.granted) {
+                Alert.alert('Permissão necessária', 'Autorize o uso da câmera para fotografar o recibo.');
+                return;
+            }
             const result = await ImagePicker.launchCameraAsync({
                 allowsEditing: true,
                 aspect: [4, 3],
                 quality: 0.8,
-                base64: true,
             });
 
-            if (!result.canceled && result.assets[0].base64) {
-                const base64 = `data:image/jpeg;base64,${result.assets[0].base64}`;
-                onPhotoSelected(base64);
+            if (!result.canceled && result.assets[0].uri) {
+                if ((result.assets[0].fileSize || 0) > 5 * 1024 * 1024) {
+                    Alert.alert('Arquivo muito grande', 'Use uma imagem de até 5 MB.');
+                    return;
+                }
+                onPhotoSelected(result.assets[0].uri);
             }
         } catch (error) {
             Alert.alert('Erro', 'Não foi possível tirar a foto');

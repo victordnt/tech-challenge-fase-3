@@ -14,6 +14,9 @@ export interface Receipt {
   url: string;
   fileName: string;
   uploadedAt: string;
+  storagePath: string;
+  contentType?: string;
+  size?: number;
 }
 
 export interface Transaction {
@@ -42,4 +45,6 @@ export interface TransactionFilters {
   category?: TransactionCategory;
   period?: 'week' | 'month' | 'year';
   search?: string;
+  startDate?: string;
+  endDate?: string;
 }

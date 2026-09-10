@@ -1,3 +1,4 @@
+import { useTheme } from '@/hooks/use-theme';
 import { Transaction } from '@/features/TransactionsList/types/finance';
 import { useState } from 'react';
 import {
@@ -19,6 +20,7 @@ interface TransactionListProps {
 }
 
 export function TransactionList({ transactions, onEdit, onDelete }: TransactionListProps) {
+    const theme = useTheme();
     const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 
     const accentColor = '#8A56FF'; // Purple accent color
@@ -134,10 +136,10 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
                 return (
                     <View key={dateKey} style={styles.groupContainer}>
                         <ThemedText style={styles.sectionTitle}>{dateKey}</ThemedText>
-                        <View style={styles.cardContainer}>
+                        <View style={[styles.cardContainer, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
                             {groupTransactions.map((item, index) => {
                                 const isIncome = item.type === 'income';
-                                const amountColor = isIncome ? accentColor : '#FFFFFF';
+                                const amountColor = isIncome ? accentColor : theme.danger;
                                 const formattedTime = formatTime(item.date);
 
                                 return (
@@ -152,15 +154,15 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
                                             styles.row,
                                             {
                                                 borderBottomWidth: index < groupTransactions.length - 1 ? 1 : 0,
-                                                borderBottomColor: '#2E2E33',
+                                                borderBottomColor: theme.border,
                                             }
                                         ]}
                                     >
                                         <View style={styles.rowLeft}>
-                                            <ThemedText style={styles.itemTitle}>
+                                            <ThemedText style={[styles.itemTitle, { color: theme.text }]}>
                                                 {item.description}
                                             </ThemedText>
-                                            <ThemedText style={styles.itemSubtitle}>
+                                            <ThemedText style={[styles.itemSubtitle, { color: theme.textSecondary }]}>
                                                 {formattedTime} • {item.category} {item.receipt?.url ? '📎' : ''}
                                             </ThemedText>
                                         </View>
@@ -216,6 +218,7 @@ const styles = StyleSheet.create({
     },
     rowLeft: {
         flex: 1,
+        minWidth: 0,
         gap: 4,
         paddingRight: 12,
     },

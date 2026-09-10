@@ -2,14 +2,14 @@ import { useAuth } from '@/features/UserProfile/contexts/auth-context';
 import { useTransactions } from '@/features/TransactionsList/contexts/transactions-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
-import type { Transaction } from '@/features/TransactionsList/types/finance';
+import type { Receipt, Transaction } from '@/features/TransactionsList/types/finance';
 import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     KeyboardAvoidingView,
     Modal,
     Platform,
+    Pressable,
     ScrollView,
     StyleSheet,
     TextInput,
@@ -24,6 +24,7 @@ import { ThemedView } from '@/components/themed-view';
 import { FIXED_CATEGORIES } from '@/features/TransactionsList/constants/categories';
 import { SymbolView } from 'expo-symbols';
 import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
+import { deleteReceipt, uploadReceipt } from '@/services/firebase/storage-service';
 
 interface TransactionModalProps {
     visible: boolean;
@@ -42,18 +43,22 @@ export function TransactionModal({ visible, onClose, editingTransaction }: Trans
     const [amount, setAmount] = useState('');
     const [category, setCategory] = useState<string>(FIXED_CATEGORIES[0]);
     const [description, setDescription] = useState('');
+    const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
     const [photo, setPhoto] = useState<string | null>(null);
     const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
     const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [formError, setFormError] = useState<string | null>(null);
 
     const neonColor = isDark ? (theme.neon || '#A855F7') : (theme.lilac || '#C084FC');
 
     const resetForm = () => {
+        setFormError(null);
         setType('income');
         setAmount('');
         setCategory(FIXED_CATEGORIES[0]);
         setDescription('');
+        setDate(new Date().toISOString().slice(0, 10));
         setPhoto(null);
         setShowCategoryDropdown(false);
     };
@@ -66,6 +71,7 @@ export function TransactionModal({ visible, onClose, editingTransaction }: Trans
                 setAmount(editingTransaction.amount.toString());
                 setCategory(editingTransaction.category || FIXED_CATEGORIES[0]);
                 setDescription(editingTransaction.description);
+                setDate(editingTransaction.date.slice(0, 10));
                 setPhoto(editingTransaction.receipt?.url || null);
                 setShowCategoryDropdown(false);
             }, 0);
@@ -80,60 +86,76 @@ export function TransactionModal({ visible, onClose, editingTransaction }: Trans
 
     const handleSubmit = async () => {
         if (!user) {
-            Alert.alert('Erro', 'Usuário não autenticado');
+            setFormError('Usuário não autenticado');
             return;
         }
 
         if (!amount || isNaN(parseFloat(amount))) {
-            Alert.alert('Erro', 'Por favor, insira um valor válido');
+            setFormError('Por favor, insira um valor válido');
+            return;
+        }
+
+        const parsedAmount = Number(amount.replace(',', '.'));
+        if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+            setFormError('O valor deve ser maior que zero');
+            return;
+        }
+
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(new Date(`${date}T12:00:00`).getTime())) {
+            setFormError('Informe uma data válida no formato AAAA-MM-DD');
             return;
         }
 
         if (!category.trim()) {
-            Alert.alert('Erro', 'Por favor, selecione uma categoria');
+            setFormError('Por favor, selecione uma categoria');
             return;
         }
 
         try {
+            setFormError(null);
             setIsSaving(true);
             const timestamp = `${Date.now()}`;
             const randomPart = Math.random().toString(36).substr(2, 9);
             const receiptId = `receipt-${timestamp}-${randomPart}`;
-            const isoDate = new Date().toISOString();
-            const dateStr = isoDate.split('T')[0];
             const finalDescription = description.trim() || category.trim();
+            const existingReceipt = editingTransaction?.receipt || null;
+            const photoChanged = Boolean(photo && photo !== existingReceipt?.url);
+            let nextReceipt: Receipt | null = existingReceipt;
+
+            if (photoChanged && photo) {
+                nextReceipt = await uploadReceipt(user.uid, photo, receiptId);
+            } else if (!photo) {
+                nextReceipt = null;
+            }
 
             const transactionData = {
                 type,
-                amount: parseFloat(amount),
+                amount: parsedAmount,
                 category: category.trim(),
                 description: finalDescription,
-                date: editingTransaction?.date || dateStr,
-                receipt: photo
-                    ? {
-                        id: editingTransaction?.receipt?.id || receiptId,
-                        url: photo,
-                        fileName: 'transaction-photo',
-                        uploadedAt: editingTransaction?.receipt?.uploadedAt || isoDate,
-                    }
-                    : null,
+                date,
+                receipt: nextReceipt,
             };
 
-            if (editingTransaction) {
-                // Modo edição
-                await updateTransaction(editingTransaction.id, transactionData);
-                Alert.alert('Sucesso', 'Transação atualizada com sucesso!');
-            } else {
-                // Modo adição
-                await addTransaction(transactionData);
-                Alert.alert('Sucesso', 'Transação adicionada com sucesso!');
+            try {
+                if (editingTransaction) {
+                    await updateTransaction(editingTransaction.id, transactionData);
+                    if (existingReceipt?.storagePath && existingReceipt.storagePath !== nextReceipt?.storagePath) {
+                        await deleteReceipt(existingReceipt.storagePath).catch(() => undefined);
+                    }
+                } else {
+                    await addTransaction(transactionData);
+                }
+            } catch (saveError) {
+                if (photoChanged && nextReceipt?.storagePath) await deleteReceipt(nextReceipt.storagePath).catch(() => undefined);
+                throw saveError;
             }
 
             resetForm();
             onClose();
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Erro ao salvar transação';
-            Alert.alert('Erro', errorMessage);
+            setFormError(errorMessage);
         } finally {
             setIsSaving(false);
         }
@@ -143,33 +165,31 @@ export function TransactionModal({ visible, onClose, editingTransaction }: Trans
 
     return (
         <>
-            <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
-                <TouchableOpacity
-                    style={[styles.overlay]}
-                    activeOpacity={1}
-                    onPress={onClose}
-                >
-                    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-                        <TouchableOpacity activeOpacity={1} onPress={() => { }}>
+            <Modal visible={visible} animationType="fade" transparent onRequestClose={() => { if (!isSaving) onClose(); }}>
+                <View style={styles.overlay}>
+                    <Pressable accessibilityLabel="Fechar transação" style={StyleSheet.absoluteFill} onPress={() => { if (!isSaving) onClose(); }} />
+                    <KeyboardAvoidingView style={styles.sheet} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+                        <View style={{ width: '100%', flexShrink: 1 }}>
                             <ScrollView
-                                style={styles.scrollView}
+                                keyboardShouldPersistTaps="handled" style={styles.scrollView}
                                 contentContainerStyle={styles.scrollContent}
                                 showsVerticalScrollIndicator={false}
                             >
-                                <Animated.View entering={SlideInDown.duration(400).springify()} exiting={SlideOutDown.duration(300)}>
+                                <Animated.View style={{ width: '100%' }} entering={SlideInDown.duration(400).springify()} exiting={SlideOutDown.duration(300)}>
                                     <ThemedView style={[styles.modalContent, { backgroundColor: theme.backgroundElement }]}>
                                         {/* Header com X */}
                                     <View style={styles.header}>
                                         <ThemedText type="title" style={styles.title}>
                                             {editingTransaction ? 'Editar Transação' : 'Nova Transação'}
                                         </ThemedText>
-                                        <TouchableOpacity onPress={onClose} style={styles.closeButton} disabled={isSaving}>
+                                        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Fechar" onPress={onClose} style={styles.closeButton} disabled={isSaving}>
                                             <ThemedText style={{ fontSize: 28, fontWeight: 'bold', opacity: isSaving ? 0.5 : 1 }}>
                                                 ×
                                             </ThemedText>
                                         </TouchableOpacity>
                                     </View>
 
+                                    {formError ? <ThemedText accessibilityRole="alert" style={{ color: theme.danger }}>{formError}</ThemedText> : null}
                                     {/* Tipo de Transação */}
                                     <View style={styles.section}>
                                         <ThemedText type="small" style={styles.sectionLabel}>Tipo</ThemedText>
@@ -218,7 +238,7 @@ export function TransactionModal({ visible, onClose, editingTransaction }: Trans
                                                 {
                                                     backgroundColor: theme.backgroundSelected,
                                                     color: theme.text,
-                                                    borderColor: neonColor,
+                                                    borderColor: theme.border,
                                                     opacity: isSaving ? 0.5 : 1,
                                                 },
                                             ]}
@@ -227,6 +247,19 @@ export function TransactionModal({ visible, onClose, editingTransaction }: Trans
                                             value={amount}
                                             onChangeText={setAmount}
                                             keyboardType="decimal-pad"
+                                            editable={!isSaving}
+                                        />
+                                    </View>
+
+                                    <View style={styles.section}>
+                                        <ThemedText type="small" style={styles.sectionLabel}>Data</ThemedText>
+                                        <TextInput
+                                            style={[styles.input, { backgroundColor: theme.backgroundSelected, color: theme.text, borderColor: neonColor }]}
+                                            placeholder="AAAA-MM-DD"
+                                            placeholderTextColor={theme.textSecondary}
+                                            value={date}
+                                            onChangeText={setDate}
+                                            maxLength={10}
                                             editable={!isSaving}
                                         />
                                     </View>
@@ -378,9 +411,9 @@ export function TransactionModal({ visible, onClose, editingTransaction }: Trans
                                     </ThemedView>
                                 </Animated.View>
                             </ScrollView>
-                        </TouchableOpacity>
+                        </View>
                     </KeyboardAvoidingView>
-                </TouchableOpacity>
+                </View>
             </Modal>
             <PhotoPreviewModal
                 visible={!!previewPhoto}
@@ -396,22 +429,25 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: 'rgba(0, 0, 0, 0.65)',
+        paddingHorizontal: 12,
+        paddingVertical: 24,
     },
+    sheet: { width: '100%', maxWidth: 540, maxHeight: '100%', flex: 1, justifyContent: 'center' },
     scrollView: {
-        maxHeight: '90%',
+        maxHeight: '100%',
         width: '100%',
     },
     scrollContent: {
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: 40,
+        paddingVertical: 0,
     },
     modalContent: {
-        width: '95%',
-        maxWidth: 500,
+        width: '100%',
+        maxWidth: 540,
         borderRadius: 20,
-        padding: 24,
+        padding: 20,
         gap: 20,
     },
     header: {
@@ -422,10 +458,15 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 20,
+        lineHeight: 28,
+        flexShrink: 1,
         fontWeight: '700',
     },
     closeButton: {
-        padding: 4,
+        padding: 8,
+        minWidth: 44,
+        minHeight: 44,
+        alignItems: 'center',
     },
     section: {
         gap: 8,
@@ -435,7 +476,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     input: {
-        borderWidth: 2,
+        borderWidth: 1,
         borderRadius: 8,
         paddingHorizontal: 16,
         paddingVertical: 14,
@@ -452,7 +493,7 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingVertical: 10,
         borderRadius: 8,
-        borderWidth: 2,
+        borderWidth: 1,
         alignItems: 'center',
     },
     selectButton: {

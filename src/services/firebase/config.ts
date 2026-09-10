@@ -1,13 +1,13 @@
-import { initializeApp } from "firebase/app";
-import { Platform } from "react-native";
-// @ts-ignore
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  browserLocalPersistence,
-  getReactNativePersistence,
-  initializeAuth,
-} from "firebase/auth";
+import { initializeApp } from "firebase/app";
+/* eslint-disable import/no-duplicates */
+import { browserLocalPersistence, initializeAuth } from "firebase/auth";
+// @ts-expect-error Firebase exports this runtime API for React Native but omits it from this entrypoint's types.
+import { getReactNativePersistence } from "firebase/auth";
+/* eslint-enable import/no-duplicates */
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
+import { Platform } from "react-native";
 
 const app = initializeApp({
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -26,3 +26,4 @@ export const auth = initializeAuth(app, {
 });
 
 export const db = getFirestore(app);
+export const storage = getStorage(app);

@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        opacity: 0.4,
+
     },
     iconSlot: {
         paddingLeft: 14,

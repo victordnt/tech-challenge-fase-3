@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface AppContextValue {
     isLoading: boolean;
@@ -14,16 +15,22 @@ const AppContext = createContext<AppContextValue | undefined>(undefined);
 export function AppProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const theme: 'light' | 'dark' = 'dark';
+    const [theme, updateTheme] = useState<'light' | 'dark'>('dark');
+
+    useEffect(() => {
+        let active = true;
+        AsyncStorage.getItem('mavi.theme').then((saved) => {
+            if (active && (saved === 'dark' || saved === 'light')) updateTheme(saved);
+        }).catch(() => undefined);
+        return () => { active = false; };
+    }, []);
 
     const setTheme = async (value: 'light' | 'dark') => {
-        // Desativado por solicitação do usuário: app permanente no modo Dark
+        await AsyncStorage.setItem('mavi.theme', value);
+        updateTheme(value);
     };
 
-    const value = useMemo(
-        () => ({ isLoading, setIsLoading, errorMessage, setErrorMessage, theme, setTheme }),
-        [isLoading, errorMessage, theme],
-    );
+    const value = { isLoading, setIsLoading, errorMessage, setErrorMessage, theme, setTheme };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

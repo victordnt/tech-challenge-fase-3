@@ -1,3 +1,4 @@
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 import { useState } from 'react';
 import {
@@ -8,7 +9,6 @@ import {
     Switch,
     TextInput,
     TouchableOpacity,
-    useColorScheme,
     View,
 } from 'react-native';
 import { ThemedText } from './themed-text';
@@ -35,7 +35,6 @@ export function AddTransactionModal({
     const [amount, setAmount] = useState('');
     const [title, setTitle] = useState('');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-    const [showDatePicker, setShowDatePicker] = useState(false);
 
     // Converte YYYY-MM-DD para dd/mm/AAAA
     const formatDateDisplay = (dateStr: string) => {
