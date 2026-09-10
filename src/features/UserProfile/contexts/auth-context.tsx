@@ -1,7 +1,8 @@
-import * as authService from "@/services/auth/auth-service";
 import { Href, useRouter } from "expo-router";
 import type { User } from "firebase/auth";
-import React, { createContext, useEffect } from "react";
+import React, { createContext, useEffect, useState } from "react";
+import * as authService from "@/features/UserProfile/services/auth-service";
+import { clearAccountNotifications } from '@/services/notifications';
 
 interface AuthContextType {
     user: User | null;
@@ -9,23 +10,23 @@ interface AuthContextType {
     signUp: (email: string, password: string) => Promise<void>;
     signIn: (email: string, password: string) => Promise<void>;
     signOut: () => Promise<void>;
+    refreshProfile: () => void;
     sign: (action: "in" | "up") => (redirectPath: Href) => (email: string, password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [user, setUser] = React.useState<User | null>(null);
-    const [loading, setLoading] = React.useState(true);
+    const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [, setProfileRevision] = useState(0);
     const router = useRouter();
 
     useEffect(() => {
-        // Observar mudanças no estado de autenticação
         const unsubscribe = authService.observeAuthState((currentUser) => {
             setUser(currentUser);
             setLoading(false);
         });
-
         return () => unsubscribe();
     }, []);
 
@@ -40,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const signOut = async () => {
+        if (user) await clearAccountNotifications(user.uid).catch(() => undefined);
         await authService.signOutUser();
         setUser(null);
     };
@@ -48,22 +50,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const sign = (action: "in" | "up") => {
         return (redirectPath: Href) => {
             return async (email: string, password: string) => {
-                try {
-                    if (action === "in") {
-                        await signIn(email, password);
-                    } else {
-                        await signUp(email, password);
-                    }
-                    router.replace(redirectPath);
-                } catch (error) {
-                    throw error;
+                if (action === "in") {
+                    await signIn(email, password);
+                } else {
+                    await signUp(email, password);
                 }
+                router.replace(redirectPath);
             };
         };
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, signUp, signIn, signOut, sign }}>
+        <AuthContext.Provider value={{ user, loading, signUp, signIn, signOut, sign, refreshProfile: () => setProfileRevision(v => v + 1) }}>
             {children}
         </AuthContext.Provider>
     );

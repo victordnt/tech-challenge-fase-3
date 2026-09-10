@@ -14,34 +14,46 @@ export type ColorScheme = {
   warning: string;
   border: string;
   shadow: string;
+  neon?: string;
+  neonAccent?: string;
+  neonGlow?: string;
+  lilac?: string;
+  lilacAccent?: string;
+  lilacGlow?: string;
 };
 
 let _colors: { light: ColorScheme; dark: ColorScheme; unspecified: ColorScheme } = {
   light: {
     text: '#1A1A2E',
-    background: '#F8F9FB',
+    background: '#F6F5FA',
     backgroundElement: '#FFFFFF',
     backgroundSelected: '#E8EBF5',
     textSecondary: '#6B7280',
-    primary: '#3B82F6',
+    primary: '#7543DA',
     success: '#10B981',
     danger: '#EF4444',
     warning: '#F59E0B',
     border: '#E5E7EB',
     shadow: 'rgba(0, 0, 0, 0.08)',
+    lilac: '#C084FC',
+    lilacAccent: '#E879F9',
+    lilacGlow: 'rgba(224, 121, 249, 0.3)',
   },
   dark: {
     text: '#F3F4F6',
-    background: '#0F172A',
-    backgroundElement: '#1E293B',
-    backgroundSelected: '#334155',
+    background: '#101415',
+    backgroundElement: '#1B1E26',
+    backgroundSelected: '#272B36',
     textSecondary: '#94A3B8',
-    primary: '#60A5FA',
+    primary: '#AD8AFF',
     success: '#34D399',
     danger: '#F87171',
     warning: '#FBBF24',
-    border: '#475569',
+    border: '#343845',
     shadow: 'rgba(0, 0, 0, 0.3)',
+    neon: '#A855F7',
+    neonAccent: '#EC4899',
+    neonGlow: 'rgba(168, 85, 247, 0.5)',
   },
   unspecified: {} as ColorScheme,
 };

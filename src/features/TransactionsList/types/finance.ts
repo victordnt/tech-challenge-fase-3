@@ -1,13 +1,6 @@
 export type TransactionType = 'income' | 'expense';
 
-export type TransactionCategory =
-  | 'Salary'
-  | 'Food'
-  | 'Transport'
-  | 'Utilities'
-  | 'Health'
-  | 'Entertainment'
-  | 'Other';
+export type TransactionCategory = string;
 
 export interface User {
   id: string;
@@ -21,6 +14,9 @@ export interface Receipt {
   url: string;
   fileName: string;
   uploadedAt: string;
+  storagePath: string;
+  contentType?: string;
+  size?: number;
 }
 
 export interface Transaction {
@@ -38,10 +34,10 @@ export interface DashboardSummary {
   totalIncome: number;
   totalExpense: number;
   balance: number;
-  categories: Array<{
+  categories: {
     category: TransactionCategory;
     total: number;
-  }>;
+  }[];
 }
 
 export interface TransactionFilters {
@@ -49,4 +45,6 @@ export interface TransactionFilters {
   category?: TransactionCategory;
   period?: 'week' | 'month' | 'year';
   search?: string;
+  startDate?: string;
+  endDate?: string;
 }

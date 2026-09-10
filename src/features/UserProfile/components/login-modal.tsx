@@ -1,15 +1,14 @@
 import { Colors } from '@/constants/theme';
+import { useAppContext } from '@/contexts/app-context';
 import { useState } from 'react';
 import {
     ActivityIndicator,
-    ColorSchemeName,
     KeyboardAvoidingView,
     Platform,
     Pressable,
     Text,
     TextInput,
     TouchableOpacity,
-    useColorScheme,
     View
 } from 'react-native';
 
@@ -19,8 +18,8 @@ interface LoginModalProps {
 }
 
 export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
-    const colorScheme = (useColorScheme() || 'light') as ColorSchemeName;
-    const theme = Colors[colorScheme];
+    const { theme: appTheme } = useAppContext();
+    const theme = Colors[appTheme];
 
     const [isSignUp, setIsSignUp] = useState(false);
     const [email, setEmail] = useState('');
@@ -29,9 +28,9 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const validateEmail = (email: string) => {
+    const validateEmail = (emailStr: string) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
+        return emailRegex.test(emailStr);
     };
 
     const handleAuth = async () => {
@@ -42,7 +41,7 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
             return;
         }
 
-        if (!validateEmail(email)) {
+        if (!validateEmail(email.trim())) {
             setError('Email inválido');
             return;
         }
@@ -65,15 +64,15 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
         try {
             setLoading(true);
             if (isSignUp) {
-                await onSignUp(email, password);
+                await onSignUp(email.trim(), password);
             } else {
-                await onSignIn(email, password);
+                await onSignIn(email.trim(), password);
             }
         } catch (err: any) {
             let errorMessage = 'Erro ao autenticar';
 
-            if (err.code === 'auth/user-not-found') {
-                errorMessage = 'Usuário não encontrado';
+            if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+                errorMessage = 'Usuário ou senha incorretos';
             } else if (err.code === 'auth/wrong-password') {
                 errorMessage = 'Senha incorreta';
             } else if (err.code === 'auth/email-already-in-use') {
@@ -82,6 +81,8 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
                 errorMessage = 'Senha muito fraca';
             } else if (err.code === 'auth/invalid-email') {
                 errorMessage = 'Email inválido';
+            } else if (err.message) {
+                errorMessage = err.message;
             }
 
             setError(errorMessage);
@@ -112,9 +113,26 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={{ width: '100%', maxWidth: 400 }}
             >
+                <View style={{ marginBottom: 24, alignItems: 'center' }}>
+                <Text
+                style={{
+                    fontSize: 16,
+                    fontWeight: '400',
+                    color: '#D2BBFF',
+                
+                }}
+                >Mavi Finance</Text>
+                <Text
+                style={{
+                    fontSize: 16,
+                    fontWeight: '400',
+                    color: '#CCC3D8',
+                }}
+                >Welcome back to your digital wallet</Text>
+                </View>
                 <View
                     style={{
-                        backgroundColor: theme.backgroundElement,
+                        backgroundColor: 'rgba(255, 255, 255, 0.03)',
                         borderRadius: 16,
                         padding: 24,
                         shadowColor: theme.shadow,
@@ -124,37 +142,13 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
                         elevation: 10,
                     }}
                 >
-                    <Text
-                        style={{
-                            fontSize: 28,
-                            fontWeight: '700',
-                            color: theme.text,
-                            marginBottom: 8,
-                            textAlign: 'center',
-                        }}
-                    >
-                        {isSignUp ? 'Criar Conta' : 'Bem-vindo'}
-                    </Text>
-
-                    <Text
-                        style={{
-                            fontSize: 14,
-                            color: theme.textSecondary,
-                            marginBottom: 24,
-                            textAlign: 'center',
-                        }}
-                    >
-                        {isSignUp
-                            ? 'Crie sua conta para começar'
-                            : 'Faça login para acessar sua conta'}
-                    </Text>
 
                     {error ? (
                         <View
                             style={{
-                                backgroundColor: Colors[colorScheme].danger + '20',
+                                backgroundColor: Colors[appTheme].danger + '20',
                                 borderLeftWidth: 4,
-                                borderLeftColor: Colors[colorScheme].danger,
+                                borderLeftColor: Colors[appTheme].danger,
                                 borderRadius: 8,
                                 padding: 12,
                                 marginBottom: 16,
@@ -162,7 +156,7 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
                         >
                             <Text
                                 style={{
-                                    color: Colors[colorScheme].danger,
+                                    color: Colors[appTheme].danger,
                                     fontSize: 14,
                                     fontWeight: '500',
                                 }}
@@ -176,11 +170,11 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
                         style={{
                             fontSize: 14,
                             fontWeight: '600',
-                            color: theme.text,
+                            color: '#E0E3E5',
                             marginBottom: 8,
                         }}
                     >
-                        Email
+                       Email
                     </Text>
 
                     <TextInput
@@ -208,7 +202,7 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
                         style={{
                             fontSize: 14,
                             fontWeight: '600',
-                            color: theme.text,
+                            color: '#E0E3E5',
                             marginBottom: 8,
                         }}
                     >
@@ -216,7 +210,7 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
                     </Text>
 
                     <TextInput
-                        placeholder="Mínimo 6 caracteres"
+                        placeholder="••••••••"
                         placeholderTextColor={theme.textSecondary}
                         value={password}
                         onChangeText={setPassword}
@@ -274,7 +268,7 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
                         onPress={handleAuth}
                         disabled={loading}
                         style={{
-                            backgroundColor: theme.primary,
+                            backgroundColor: '#732EE4',
                             borderRadius: 8,
                             paddingVertical: 14,
                             justifyContent: 'center',
@@ -288,29 +282,30 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
                         ) : (
                             <Text
                                 style={{
-                                    color: '#FFFFFF',
+                                    color: '#EDE0FF',
                                     fontSize: 16,
                                     fontWeight: '600',
                                 }}
                             >
-                                {isSignUp ? 'Criar Conta' : 'Entrar'}
+                                {isSignUp ? 'Criar conta' : 'Entrar'}
                             </Text>
                         )}
                     </TouchableOpacity>
-
-                    <Pressable onPress={handleToggleMode}>
+                </View>
+                 <Pressable onPress={handleToggleMode}>
                         <View
                             style={{
                                 flexDirection: 'row',
                                 justifyContent: 'center',
                                 alignItems: 'center',
                                 flexWrap: 'wrap',
+                                marginTop: 16,
                             }}
                         >
                             <Text
                                 style={{
                                     fontSize: 14,
-                                    color: theme.textSecondary,
+                                    color: '#CCC3D8',
                                     textAlign: 'center',
                                 }}
                             >
@@ -320,7 +315,7 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
                             <Text
                                 style={{
                                     fontSize: 14,
-                                    color: theme.primary,
+                                    color: '#D2BBFF',
                                     fontWeight: '600',
                                 }}
                             >
@@ -328,7 +323,6 @@ export function LoginModal({ onSignIn, onSignUp }: LoginModalProps) {
                             </Text>
                         </View>
                     </Pressable>
-                </View>
             </KeyboardAvoidingView>
         </View>
     );

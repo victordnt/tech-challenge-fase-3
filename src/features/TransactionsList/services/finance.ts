@@ -1,4 +1,4 @@
-import type { DashboardSummary, Transaction, TransactionFilters } from '@/types/finance';
+import type { DashboardSummary, Transaction, TransactionFilters } from '@/features/TransactionsList/types/finance';
 
 export function calculateDashboardSummary(transactions: Transaction[]): DashboardSummary {
   const totalIncome = transactions
@@ -9,7 +9,7 @@ export function calculateDashboardSummary(transactions: Transaction[]): Dashboar
     .filter((item) => item.type === 'expense')
     .reduce((sum, item) => sum + item.amount, 0);
 
-  const categories = transactions.reduce<Array<{ category: Transaction['category']; total: number }>>(
+  const categories = transactions.reduce<{ category: Transaction['category']; total: number }[]>(
     (acc, item) => {
       const existing = acc.find((entry) => entry.category === item.category);
 
@@ -50,6 +50,10 @@ export function filterTransactions(transactions: Transaction[], filters: Transac
         return false;
       }
     }
+
+    const transactionDay = transaction.date.slice(0, 10);
+    if (filters.startDate && transactionDay < filters.startDate) return false;
+    if (filters.endDate && transactionDay > filters.endDate) return false;
 
     return true;
   });
