@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useAppContext } from '@/contexts/app-context';
+import { useEffect, useState } from "react";
+import { useAppContext } from "@/contexts/app-context";
 
 export function useColorScheme() {
   const [hasHydrated, setHasHydrated] = useState(false);
@@ -18,5 +18,5 @@ export function useColorScheme() {
     return theme;
   }
 
-  return 'dark';
+  return "dark";
 }

@@ -3,8 +3,8 @@
  * https://docs.expo.dev/guides/color-schemes/
  */
 
-import { Colors } from '@/constants/theme';
-import { useAppContext } from '@/contexts/app-context';
+import { Colors } from "@/constants/theme";
+import { useAppContext } from "@/contexts/app-context";
 
 export function useTheme() {
   const { theme } = useAppContext();

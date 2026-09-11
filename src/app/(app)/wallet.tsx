@@ -1,1 +1,1 @@
-export { default } from '@/features/TransactionsList/screens/TransactionsListPage';
+export { default } from "@/features/TransactionsList/screens/TransactionsListPage";

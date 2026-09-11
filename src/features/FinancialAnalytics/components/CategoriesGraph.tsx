@@ -1,4 +1,4 @@
-import { useTheme } from '@/hooks/use-theme';
+import { useTheme } from "@/hooks/use-theme";
 import type { Transaction } from "@/features/TransactionsList/types/finance";
 import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
@@ -18,7 +18,9 @@ const CATEGORY_COLORS = [
   "#C4B5FD",
 ];
 
-export default function CategoriesGraph({ transactions = [] }: CategoriesGraphProps) {
+export default function CategoriesGraph({
+  transactions = [],
+}: CategoriesGraphProps) {
   const theme = useTheme();
   const { categoryList, totalExpense } = useMemo(() => {
     let total = 0;
@@ -68,9 +70,17 @@ export default function CategoriesGraph({ transactions = [] }: CategoriesGraphPr
   }, [categoryList, circumference]);
 
   return (
-    <View style={[styles.card, styles.largeCard, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+    <View
+      style={[
+        styles.card,
+        styles.largeCard,
+        { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+      ]}
+    >
       <View style={styles.chartHeader}>
-        <Text style={[styles.chartTitle, { color: theme.text }]}>Categorias de saída</Text>
+        <Text style={[styles.chartTitle, { color: theme.text }]}>
+          Categorias de saída
+        </Text>
       </View>
 
       <View style={styles.donutContainer}>
@@ -105,9 +115,14 @@ export default function CategoriesGraph({ transactions = [] }: CategoriesGraphPr
 
         {/* Overlay do Texto perfeitamente centralizado via Flexbox nativo */}
         <View style={styles.donutCenterOverlay} pointerEvents="none">
-          <Text style={[styles.donutLabel, { color: theme.text }]}>Total saídas</Text>
+          <Text style={[styles.donutLabel, { color: theme.text }]}>
+            Total saídas
+          </Text>
           <Text style={[styles.donutValue, { color: theme.text }]}>
-            R$ {totalExpense >= 1000 ? `${(totalExpense / 1000).toFixed(1)}k` : totalExpense.toFixed(2)}
+            R${" "}
+            {totalExpense >= 1000
+              ? `${(totalExpense / 1000).toFixed(1)}k`
+              : totalExpense.toFixed(2)}
           </Text>
         </View>
       </View>
@@ -116,7 +131,9 @@ export default function CategoriesGraph({ transactions = [] }: CategoriesGraphPr
       <View style={styles.categoriesList}>
         {categoryList.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={{ color: "#94A3B8", fontSize: 13 }}>Nenhuma saída registrada no período</Text>
+            <Text style={{ color: "#94A3B8", fontSize: 13 }}>
+              Nenhuma saída registrada no período
+            </Text>
           </View>
         ) : (
           categoryList.map((cat) => (
@@ -134,7 +151,9 @@ export default function CategoriesGraph({ transactions = [] }: CategoriesGraphPr
                     },
                   ]}
                 />
-                <Text style={[styles.categoryName, { color: theme.text }]}>{cat.name}</Text>
+                <Text style={[styles.categoryName, { color: theme.text }]}>
+                  {cat.name}
+                </Text>
               </View>
               <Text style={[styles.categoryValue, { color: theme.text }]}>
                 {cat.percentage.toFixed(1)}% (R$ {cat.amount.toFixed(2)})
@@ -161,7 +180,6 @@ const styles = StyleSheet.create({
   largeCard: {
     width: "100%",
     justifyContent: "flex-start",
-
   },
   chartHeader: {
     flexDirection: "row",

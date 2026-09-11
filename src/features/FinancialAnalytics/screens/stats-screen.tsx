@@ -1,4 +1,4 @@
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
   StyleSheet,
   ScrollView,
@@ -77,7 +77,9 @@ export default function StatsScreen() {
     });
 
     const topCategoryPercent =
-      totalSpent > 0 ? ((topCategoryAmount / totalSpent) * 100).toFixed(0) : "0";
+      totalSpent > 0
+        ? ((topCategoryAmount / totalSpent) * 100).toFixed(0)
+        : "0";
 
     return [
       {
@@ -85,7 +87,11 @@ export default function StatsScreen() {
         value: `R$ ${totalSpent.toFixed(2)}`,
         subtext: `${expenseCount} saídas no período`,
         subtextColor: "#FFB4AB",
-        iconName: { ios: "arrow.down.right", android: "trending_down", web: "trending_down" },
+        iconName: {
+          ios: "arrow.down.right",
+          android: "trending_down",
+          web: "trending_down",
+        },
         iconColor: "#FFB4AB",
       },
       {
@@ -93,13 +99,18 @@ export default function StatsScreen() {
         value: `R$ ${totalIncome.toFixed(2)}`,
         subtext: `${incomeCount} entradas no período`,
         subtextColor: "#D2BBFF",
-        iconName: { ios: "arrow.up.right", android: "trending_up", web: "trending_up" },
+        iconName: {
+          ios: "arrow.up.right",
+          android: "trending_up",
+          web: "trending_up",
+        },
         iconColor: "#D2BBFF",
       },
       {
         title: "Taxa de poupança",
         value: `${savingsRate.toFixed(1)}%`,
-        subtext: totalIncome > 0 ? "do total recebido" : "sem entradas no período",
+        subtext:
+          totalIncome > 0 ? "do total recebido" : "sem entradas no período",
         subtextColor: "#CCC3D8",
         iconName: { ios: "piggybank", android: "savings", web: "savings" },
         iconColor: "#B9C5F2",
@@ -107,7 +118,10 @@ export default function StatsScreen() {
       {
         title: "Maior gasto",
         value: topCategory,
-        subtext: topCategoryAmount > 0 ? `${topCategoryPercent}% dos gastos (R$ ${topCategoryAmount.toFixed(2)})` : "Sem saídas no período",
+        subtext:
+          topCategoryAmount > 0
+            ? `${topCategoryPercent}% dos gastos (R$ ${topCategoryAmount.toFixed(2)})`
+            : "Sem saídas no período",
         subtextColor: "#CCC3D8",
         iconName: { ios: "chart.pie", android: "pie_chart", web: "pie_chart" },
         iconColor: "#FFB4A3",
@@ -130,7 +144,7 @@ export default function StatsScreen() {
             Análises Financeiras
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-             Seu panorama financeiro
+            Seu panorama financeiro
           </ThemedText>
         </View>
 
@@ -181,7 +195,10 @@ export default function StatsScreen() {
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#8A56FF" />
-            <ThemedText type="small" style={{ color: "#94A3B8", marginTop: 12 }}>
+            <ThemedText
+              type="small"
+              style={{ color: "#94A3B8", marginTop: 12 }}
+            >
               Carregando análises do Firebase...
             </ThemedText>
           </View>
@@ -191,7 +208,15 @@ export default function StatsScreen() {
             <View style={styles.gridContainer}>
               <View style={styles.row}>
                 {/* Card 1 */}
-                <View style={[styles.card, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+                <View
+                  style={[
+                    styles.card,
+                    {
+                      backgroundColor: colors.backgroundElement,
+                      borderColor: colors.border,
+                    },
+                  ]}
+                >
                   <View style={styles.cardHeader}>
                     <SymbolView
                       name={statsCards[0].iconName as any}
@@ -199,10 +224,14 @@ export default function StatsScreen() {
                       tintColor={statsCards[0].iconColor}
                       weight="bold"
                     />
-                    <Text style={[styles.cardLabel, { color: colors.text }]}>{statsCards[0].title}</Text>
+                    <Text style={[styles.cardLabel, { color: colors.text }]}>
+                      {statsCards[0].title}
+                    </Text>
                   </View>
                   <View style={styles.cardContent}>
-                    <Text style={[styles.cardValue, { color: colors.text }]}>{statsCards[0].value}</Text>
+                    <Text style={[styles.cardValue, { color: colors.text }]}>
+                      {statsCards[0].value}
+                    </Text>
                     <Text
                       style={[
                         styles.cardSubtext,
@@ -223,10 +252,14 @@ export default function StatsScreen() {
                       tintColor={statsCards[1].iconColor}
                       weight="bold"
                     />
-                    <Text style={[styles.cardLabel, { color: colors.text }]}>{statsCards[1].title}</Text>
+                    <Text style={[styles.cardLabel, { color: colors.text }]}>
+                      {statsCards[1].title}
+                    </Text>
                   </View>
                   <View style={styles.cardContent}>
-                    <Text style={[styles.cardValue, { color: colors.text }]}>{statsCards[1].value}</Text>
+                    <Text style={[styles.cardValue, { color: colors.text }]}>
+                      {statsCards[1].value}
+                    </Text>
                     <Text
                       style={[
                         styles.cardSubtext,
@@ -249,10 +282,14 @@ export default function StatsScreen() {
                       tintColor={statsCards[2].iconColor}
                       weight="bold"
                     />
-                    <Text style={[styles.cardLabel, { color: colors.text }]}>{statsCards[2].title}</Text>
+                    <Text style={[styles.cardLabel, { color: colors.text }]}>
+                      {statsCards[2].title}
+                    </Text>
                   </View>
                   <View style={styles.cardContent}>
-                    <Text style={[styles.cardValue, { color: colors.text }]}>{statsCards[2].value}</Text>
+                    <Text style={[styles.cardValue, { color: colors.text }]}>
+                      {statsCards[2].value}
+                    </Text>
                     <Text
                       style={[
                         styles.cardSubtext,
@@ -273,10 +310,14 @@ export default function StatsScreen() {
                       tintColor={statsCards[3].iconColor}
                       weight="bold"
                     />
-                    <Text style={[styles.cardLabel, { color: colors.text }]}>{statsCards[3].title}</Text>
+                    <Text style={[styles.cardLabel, { color: colors.text }]}>
+                      {statsCards[3].title}
+                    </Text>
                   </View>
                   <View style={styles.cardContent}>
-                    <Text style={[styles.cardValue, { color: colors.text }]}>{statsCards[3].value}</Text>
+                    <Text style={[styles.cardValue, { color: colors.text }]}>
+                      {statsCards[3].value}
+                    </Text>
                     <Text
                       style={[
                         styles.cardSubtext,

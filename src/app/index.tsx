@@ -1,1 +1,1 @@
-export { default } from '@/features/UserProfile/screens/home-redirect';
+export { default } from "@/features/UserProfile/screens/home-redirect";

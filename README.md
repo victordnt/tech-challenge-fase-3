@@ -12,6 +12,7 @@ Aplicação mobile de gerenciamento financeiro pessoal em React Native, Expo Rou
 ## Como iniciar
 
 1. Instale as dependências:
+
 ```bash
 npm install
 ```
@@ -19,30 +20,37 @@ npm install
 2. Inicie o projeto com a opção desejada:
 
    **Navegador web (padrão):**
+
    ```bash
    npx expo start --web
    ```
 
    **Android emulator:**
+
    ```bash
    npx expo start --android
    ```
 
    **iOS simulator (macOS):**
+
    ```bash
    npx expo start --ios
    ```
 
    **Expo Go (mobile):**
+
    ```bash
    npx expo start
    ```
+
    E escaneie o QR code com o app Expo Go
 
    **Expo Go usando túnel:**
+
    ```bash
    npm run tunnel
    ```
+
    Use essa opção quando o celular não conseguir acessar o computador pela rede local, por exemplo, quando os dispositivos estiverem em redes Wi-Fi diferentes, houver firewall ou a rede bloquear a comunicação entre dispositivos. O Expo cria uma conexão intermediária para entregar o bundle ao celular.
 
    O modo túnel costuma ser mais lento que a conexão local e pode depender de uma conexão estável com a internet. Quando o celular e o computador estão na mesma rede e o QR code funciona normalmente, prefira `npx expo start`.
@@ -56,14 +64,14 @@ O app precisa da configuração do Firebase para funcionar. Para obtê-la:
 3. Na aba **Geral**, em **Seus apps**, localize ou crie um app **Web** (`</>`).
 4. Em **Configuração do SDK**, copie os valores do objeto `firebaseConfig` para um arquivo `.env` na raiz (use `.env.example` como modelo):
 
-| Variável no `.env` | Campo do `firebaseConfig` |
-| --- | --- |
-| `EXPO_PUBLIC_FIREBASE_API_KEY` | `apiKey` |
-| `EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN` | `authDomain` |
-| `EXPO_PUBLIC_FIREBASE_PROJECT_ID` | `projectId` |
-| `EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET` | `storageBucket` |
-| `EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | `messagingSenderId` |
-| `EXPO_PUBLIC_FIREBASE_APP_ID` | `appId` |
+| Variável no `.env`                         | Campo do `firebaseConfig` |
+| ------------------------------------------ | ------------------------- |
+| `EXPO_PUBLIC_FIREBASE_API_KEY`             | `apiKey`                  |
+| `EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN`         | `authDomain`              |
+| `EXPO_PUBLIC_FIREBASE_PROJECT_ID`          | `projectId`               |
+| `EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET`      | `storageBucket`           |
+| `EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | `messagingSenderId`       |
+| `EXPO_PUBLIC_FIREBASE_APP_ID`              | `appId`                   |
 
 O arquivo deve ficar assim:
 
@@ -136,9 +144,9 @@ Uma transação possui `userId`, tipo, valor, categoria, descrição, data e, op
 - No web, a autenticação usa a persistência do navegador. No Android e iOS, usa `AsyncStorage`; a seleção ocorre em `src/services/firebase/config.ts`.
 - Ao instalar dependências novas ou alterar a configuração de plataforma, reinicie o Expo limpando o cache:
 
-   ```bash
-   npx expo start -c
-   ```
+  ```bash
+  npx expo start -c
+  ```
 
 ## Estrutura de arquivos
 
@@ -153,7 +161,6 @@ src/
 ├── types/            # Tipos TypeScript
 └── global.css        # Estilos globais
 ```
-
 
 ## Perfil, tema e notificações
 

@@ -1,4 +1,4 @@
-import { useAppContext } from '@/contexts/app-context';
+import { useAppContext } from "@/contexts/app-context";
 
 export function useColorScheme() {
   const { theme } = useAppContext();

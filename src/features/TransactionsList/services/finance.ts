@@ -1,28 +1,33 @@
-import type { DashboardSummary, Transaction, TransactionFilters } from '@/features/TransactionsList/types/finance';
+import type {
+  DashboardSummary,
+  Transaction,
+  TransactionFilters,
+} from "@/features/TransactionsList/types/finance";
 
-export function calculateDashboardSummary(transactions: Transaction[]): DashboardSummary {
+export function calculateDashboardSummary(
+  transactions: Transaction[],
+): DashboardSummary {
   const totalIncome = transactions
-    .filter((item) => item.type === 'income')
+    .filter((item) => item.type === "income")
     .reduce((sum, item) => sum + item.amount, 0);
 
   const totalExpense = transactions
-    .filter((item) => item.type === 'expense')
+    .filter((item) => item.type === "expense")
     .reduce((sum, item) => sum + item.amount, 0);
 
-  const categories = transactions.reduce<{ category: Transaction['category']; total: number }[]>(
-    (acc, item) => {
-      const existing = acc.find((entry) => entry.category === item.category);
+  const categories = transactions.reduce<
+    { category: Transaction["category"]; total: number }[]
+  >((acc, item) => {
+    const existing = acc.find((entry) => entry.category === item.category);
 
-      if (existing) {
-        existing.total += item.amount;
-      } else {
-        acc.push({ category: item.category, total: item.amount });
-      }
+    if (existing) {
+      existing.total += item.amount;
+    } else {
+      acc.push({ category: item.category, total: item.amount });
+    }
 
-      return acc;
-    },
-    [],
-  );
+    return acc;
+  }, []);
 
   return {
     totalIncome,
@@ -32,7 +37,10 @@ export function calculateDashboardSummary(transactions: Transaction[]): Dashboar
   };
 }
 
-export function filterTransactions(transactions: Transaction[], filters: TransactionFilters) {
+export function filterTransactions(
+  transactions: Transaction[],
+  filters: TransactionFilters,
+) {
   return transactions.filter((transaction) => {
     if (filters.type && transaction.type !== filters.type) {
       return false;
@@ -44,7 +52,8 @@ export function filterTransactions(transactions: Transaction[], filters: Transac
 
     if (filters.search) {
       const normalizedSearch = filters.search.toLowerCase();
-      const searchableText = `${transaction.description} ${transaction.category}`.toLowerCase();
+      const searchableText =
+        `${transaction.description} ${transaction.category}`.toLowerCase();
 
       if (!searchableText.includes(normalizedSearch)) {
         return false;

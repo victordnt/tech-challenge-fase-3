@@ -1,20 +1,20 @@
-import type { Transaction } from '@/features/TransactionsList/types/finance';
+import type { Transaction } from "@/features/TransactionsList/types/finance";
 import {
-    addDoc,
-    collection,
-    deleteDoc,
-    doc,
-    getFirestore,
-    limit,
-    onSnapshot,
-    orderBy,
-    query,
-    Timestamp,
-    Unsubscribe,
-    updateDoc,
-    where,
-} from 'firebase/firestore';
-import { auth } from '@/services/firebase/config';
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getFirestore,
+  limit,
+  onSnapshot,
+  orderBy,
+  query,
+  Timestamp,
+  Unsubscribe,
+  updateDoc,
+  where,
+} from "firebase/firestore";
+import { auth } from "@/services/firebase/config";
 
 const db = getFirestore(auth.app);
 
@@ -22,10 +22,10 @@ const db = getFirestore(auth.app);
  * Adiciona uma nova transação ao Firestore.
  */
 export async function addTransactionToFirestore(
-  transaction: Omit<Transaction, 'id' | 'userId'>
+  transaction: Omit<Transaction, "id" | "userId">,
 ): Promise<Transaction> {
   const userId = auth.currentUser?.uid;
-  if (!userId) throw new Error('Usuário não autenticado.');
+  if (!userId) throw new Error("Usuário não autenticado.");
 
   const payload = {
     userId,
@@ -38,7 +38,7 @@ export async function addTransactionToFirestore(
     createdAt: Timestamp.now(),
   };
 
-  const docRef = await addDoc(collection(db, 'transactions'), payload);
+  const docRef = await addDoc(collection(db, "transactions"), payload);
   return {
     id: docRef.id,
     userId,
@@ -52,7 +52,7 @@ export async function addTransactionToFirestore(
 export function onTransactionsSnapshot(
   pageSize: number,
   callback: (transactions: Transaction[]) => void,
-  onError?: (error: Error) => void
+  onError?: (error: Error) => void,
 ): Unsubscribe {
   try {
     const userId = auth.currentUser?.uid;
@@ -62,9 +62,9 @@ export function onTransactionsSnapshot(
     }
 
     const q = query(
-      collection(db, 'transactions'),
-      where('userId', '==', userId),
-      orderBy('date', 'desc'),
+      collection(db, "transactions"),
+      where("userId", "==", userId),
+      orderBy("date", "desc"),
       limit(pageSize),
     );
 
@@ -84,15 +84,21 @@ export function onTransactionsSnapshot(
             receipt: doc.data().receipt || null,
           });
         });
-        transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        transactions.sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+        );
         callback(transactions);
       },
       (error) => {
         onError?.(error);
-      }
+      },
     );
   } catch (error) {
-    onError?.(error instanceof Error ? error : new Error('Erro ao consultar transações.'));
+    onError?.(
+      error instanceof Error
+        ? error
+        : new Error("Erro ao consultar transações."),
+    );
     return () => {};
   }
 }
@@ -102,16 +108,21 @@ export function onTransactionsSnapshot(
  */
 export async function updateTransactionInFirestore(
   transactionId: string,
-  updates: Partial<Transaction>
+  updates: Partial<Transaction>,
 ): Promise<void> {
-  if (!auth.currentUser?.uid) throw new Error('Usuário não autenticado.');
-  await updateDoc(doc(db, 'transactions', transactionId), { ...updates, updatedAt: Timestamp.now() });
+  if (!auth.currentUser?.uid) throw new Error("Usuário não autenticado.");
+  await updateDoc(doc(db, "transactions", transactionId), {
+    ...updates,
+    updatedAt: Timestamp.now(),
+  });
 }
 
 /**
  * Deleta uma transação
  */
-export async function deleteTransactionFromFirestore(transactionId: string): Promise<void> {
-  if (!auth.currentUser?.uid) throw new Error('Usuário não autenticado.');
-  await deleteDoc(doc(db, 'transactions', transactionId));
+export async function deleteTransactionFromFirestore(
+  transactionId: string,
+): Promise<void> {
+  if (!auth.currentUser?.uid) throw new Error("Usuário não autenticado.");
+  await deleteDoc(doc(db, "transactions", transactionId));
 }

@@ -6,7 +6,6 @@ import { browserLocalPersistence, initializeAuth } from "firebase/auth";
 import { getReactNativePersistence } from "firebase/auth";
 /* eslint-enable import/no-duplicates */
 import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
 import { Platform } from "react-native";
 
 const app = initializeApp({
@@ -26,4 +25,3 @@ export const auth = initializeAuth(app, {
 });
 
 export const db = getFirestore(app);
-export const storage = getStorage(app);
