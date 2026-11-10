@@ -14,10 +14,12 @@ import {
 
 interface PhotoPickerProps {
   photo: string | null;
-  onPhotoSelected: (photo: string) => void;
+  onPhotoSelected: (photoUri: string) => void;
   onPhotoRemoved: () => void;
-  onPhotoPreview?: (photo: string) => void;
+  onPhotoPreview?: (photoUri: string) => void;
 }
+
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 
 export function PhotoPicker({
   photo,
@@ -34,21 +36,20 @@ export function PhotoPicker({
   const neonColor = isDark ? theme.neon || "#A855F7" : theme.lilac || "#C084FC";
 
   const selectImage = (asset: ImagePicker.ImagePickerAsset) => {
-    if (!asset.base64) {
+    if (!asset.uri) {
       Alert.alert("Erro", "Não foi possível preparar a imagem para salvar.");
       return;
     }
 
-    const dataUri = `data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}`;
-    if (dataUri.length > 700_000) {
+    if (asset.fileSize && asset.fileSize > MAX_IMAGE_SIZE_BYTES) {
       Alert.alert(
         "Arquivo muito grande",
-        "A imagem comprimida ainda é grande demais para salvar no Firestore. Escolha uma imagem menor.",
+        "A imagem selecionada é maior que o limite de 5 MB. Escolha uma imagem menor.",
       );
       return;
     }
 
-    onPhotoSelected(dataUri);
+    onPhotoSelected(asset.uri);
   };
 
   const pickImage = async () => {
@@ -59,7 +60,6 @@ export function PhotoPicker({
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
-        base64: true,
       });
 
       if (!result.canceled && result.assets[0].uri) {
@@ -88,7 +88,6 @@ export function PhotoPicker({
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
-        base64: true,
       });
 
       if (!result.canceled && result.assets[0].uri) {

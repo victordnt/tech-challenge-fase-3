@@ -22,7 +22,10 @@ import { TransactionList } from "@/features/TransactionsList/components/transact
 import { TransactionModal } from "@/features/TransactionsList/components/transaction-modal";
 
 import CashFlowGraph from "@/features/FinancialAnalytics/components/CashFlowGraph";
-import { useTransactions } from "@/features/TransactionsList/contexts/transactions-context";
+import {
+  useTransactionsActions,
+  useTransactionsState,
+} from "@/features/TransactionsList/contexts/transactions-context";
 import {
   calculateDashboardSummary,
   filterTransactions,
@@ -37,21 +40,23 @@ export default function DashboardScreen() {
   const {
     transactions,
     filters,
-    setFilters,
     currentPage,
-    setCurrentPage,
     itemsPerPage,
     loading: transactionsLoading,
     error,
     hasMore,
+  } = useTransactionsState();
+  const {
+    setFilters,
+    setCurrentPage,
     loadMore,
     retry,
-  } = useTransactions();
+    deleteTransaction,
+  } = useTransactionsActions();
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
-  const { deleteTransaction } = useTransactions();
 
   const filteredTransactions = useMemo(
     () => filterTransactions(transactions, filters),
@@ -163,7 +168,10 @@ export default function DashboardScreen() {
                 setEditingTransaction(null);
                 setIsModalVisible(true);
               }}
-              style={[styles.newTransactionButton, { flex: 1 }]}
+              style={[
+                styles.newTransactionButton,
+                { flex: 1, backgroundColor: colors.primary },
+              ]}
               activeOpacity={0.8}
             >
               <ThemedText style={styles.newTransactionButtonText}>
@@ -237,7 +245,7 @@ export default function DashboardScreen() {
                         styles.badge,
                         activeFilter === option
                           ? {
-                              backgroundColor: "#8A56FF",
+                              backgroundColor: colors.primary,
                               borderColor: "transparent",
                             }
                           : {
@@ -252,7 +260,7 @@ export default function DashboardScreen() {
                           styles.badgeText,
                           activeFilter === option
                             ? { color: "#FFFFFF" }
-                            : { color: "#94A3B8" },
+                            : { color: colors.textSecondary },
                         ]}
                       >
                         {option === "All"

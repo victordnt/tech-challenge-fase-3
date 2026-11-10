@@ -55,6 +55,30 @@ npm install
 
    O modo túnel costuma ser mais lento que a conexão local e pode depender de uma conexão estável com a internet. Quando o celular e o computador estão na mesma rede e o QR code funciona normalmente, prefira `npx expo start`.
 
+## Como logar no sistema
+
+A autenticação é realizada com **Firebase Authentication** (método E-mail e Senha).
+
+1. **Abrir a tela de autenticação**:
+   Ao iniciar o aplicativo, se nenhuma sessão estiver ativa, a aplicação redireciona automaticamente para a tela de login (`/login`).
+2. **Entrar com conta existente**:
+   - Digite o seu **E-mail** cadastrado.
+   - Digite a sua **Senha** (mínimo de 6 caracteres).
+   - Clique no botão **Entrar**.
+   - O aplicativo validará as credenciais e direcionará você para a tela inicial do dashboard (`/(app)`).
+3. **Criar uma nova conta (Primeiro acesso)**:
+   - Na tela de login, clique no link **"Não tem uma conta? Cadastre-se"**.
+   - Preencha o seu **E-mail**, defina uma **Senha** e confirme a senha.
+   - Clique em **Cadastrar**.
+   - A conta será criada no Firebase Authentication e o login será efetuado automaticamente.
+4. **Persistência segura da sessão**:
+   - No **navegador web**, a sessão permanece ativa via `browserLocalPersistence`.
+   - No **Android e iOS**, a sessão é armazenada de forma criptografada usando **Expo SecureStore** (Keystore / Keychain). Ao fechar e reabrir o app, sua sessão continuará ativa sem precisar digitar a senha novamente.
+5. **Encerrar a sessão (Logout)**:
+   - Acesse a aba **Perfil** no menu inferior.
+   - Role até o final da tela e clique em **Sair da conta**.
+   - Confirme a ação no diálogo de confirmação. A sessão, as notificações e o cache de dados em memória serão limpos com segurança.
+
 ## Variáveis de ambiente
 
 O app precisa da configuração do Firebase para funcionar. Para obtê-la:
@@ -98,7 +122,7 @@ O app salva as transações no **Cloud Firestore**:
 4. Acesse **Storage**, clique em **Começar** e use uma região compatível com o banco.
 5. Em **Authentication > Método de login**, ative **E-mail/senha**.
 
-A coleção `transactions` será criada automaticamente quando a primeira transação for salva. Os recibos ficam em `receipts/{userId}/{receiptId}` no Storage.
+A coleção `transactions` será criada automaticamente quando a primeira transação for salva. Os recibos ficam em `receipts/{userId}/{receiptId}/{fileName}` no Storage.
 
 Instale a CLI do Firebase, autentique e vincule o projeto:
 
@@ -130,7 +154,7 @@ O plugin `expo-image-picker` está configurado no `app.json` com mensagens de c�
 
 ## Estrutura dos dados
 
-Uma transação possui `userId`, tipo, valor, categoria, descrição, data e, opcionalmente, metadados do recibo. O documento guarda apenas a URL do download e o caminho do Storage — a imagem não é armazenada como Base64 no Firestore.
+Uma transação possui `userId`, tipo, valor, categoria, descrição, data e, opcionalmente, metadados do recibo (`id`, `storagePath`, `fileName`, `contentType`, `size`, `uploadedAt`). O documento guarda apenas metadados e o caminho do Storage (`storagePath`) — a imagem não é armazenada como Base64 no Firestore e o download é resolvido sob demanda no Firebase Storage.
 
 ## Solução de problemas
 
@@ -141,25 +165,108 @@ Uma transação possui `userId`, tipo, valor, categoria, descrição, data e, op
 
 ## Observações importantes
 
-- No web, a autenticação usa a persistência do navegador. No Android e iOS, usa `AsyncStorage`; a seleção ocorre em `src/services/firebase/config.ts`.
+- No web, a autenticação usa a persistência do navegador (`browserLocalPersistence`). No Android e iOS, usa armazenamento seguro protegido via `expo-secure-store` (`secureAuthStorage`); a seleção ocorre em `src/services/firebase/config.ts`.
 - Ao instalar dependências novas ou alterar a configuração de plataforma, reinicie o Expo limpando o cache:
 
   ```bash
   npx expo start -c
   ```
 
+## Resumo das atualizações realizadas (Histórias 1 a 7)
+
+Esta versão inclui a refatoração e modernização da arquitetura da aplicação para aderir aos princípios de **Clean Architecture**, **Repository Pattern**, **Gerenciamento de Estado Reativo** e **Desenvolvimento Seguro**, distribuídas em 7 histórias de engenharia:
+
+1. **História 1 – Isolar o domínio financeiro e seus casos de uso**
+   - Criação da camada de domínio pura (`src/features/TransactionsList/domain/`), completamente independente de frameworks (React, Expo ou Firebase).
+   - Definição da entidade `Transaction`, tipos associados e do contrato `TransactionRepository` com `userId` explícito.
+   - Implementação dos quatro casos de uso essenciais: `ObserveTransactionsUseCase`, `CreateTransactionUseCase`, `UpdateTransactionUseCase` e `DeleteTransactionUseCase`.
+   - Migração das funções puras de cálculo (`calculateDashboardSummary`) e filtros (`filterTransactions`) para o domínio.
+   - Preservação de compatibilidade através de fachadas em `types/finance.ts` e `services/finance.ts`.
+
+2. **História 2 – Implementar o repositório Firestore e a composição de dependências**
+   - Criação do `FirestoreTransactionRepository` (`data/repositories/`) implementando o contrato do domínio e utilizando a instância centralizada `db` exportada em `src/services/firebase/config.ts`.
+   - Criação do container de injeção de dependências `transactions-container.ts` (`di/`), permitindo compor e substituir o repositório facilmente em testes.
+   - Migração de `services/firestore.ts` para atuar como fachada delegando chamadas aos casos de uso.
+
+3. **História 3 – Separar estado reativo e comandos da feature**
+   - Criação de `transactions-reducer.ts` para transições de estado atômicas e previsíveis (carga inicial, chegada de snapshot, mutações otimistas, sucesso, rollback e limpeza de sessão).
+   - Separação do contexto em dois provedores e hooks dedicados:
+     - `useTransactionsState()`: consome dados, filtros, paginação, loading e erros (usado por telas que só leem dados, como análises e dashboard).
+     - `useTransactionsActions()`: consome comandos de escrita como `addTransaction`, `updateTransaction` e `deleteTransaction` (usado por modais e botões de ação).
+   - Manutenção de `useTransactions()` como fachada combinada de compatibilidade.
+
+4. **História 4 – Pré-carregar e manter cache efêmero por usuário**
+   - Criação do `InMemoryTransactionCache` (`data/cache/`), isolado por `userId`, hidratando a tela antes do primeiro snapshot para eliminar *flashes* de loading durante a navegação autenticada.
+   - Manutenção da regra de segurança e minimização de dados: nenhum dado financeiro é salvo no `AsyncStorage`.
+   - Limpeza automática do cache da conta ao realizar logout.
+   - Configuração de `lazy: true` para a aba de estatísticas no tab navigator (`src/app/(app)/_layout.tsx`).
+
+5. **História 5 – Armazenar recibos no Firebase Storage**
+   - Remoção de codificação Base64 e do salvamento de imagens no Firestore.
+   - O seletor `photo-picker.tsx` fornece apenas URI local, validando o tipo MIME (imagem) e limite de tamanho de 5 MB.
+   - Criação do `FirebaseReceiptStorage` (`data/repositories/`) gerenciando uploads, downloads sob demanda (`getDownloadURL`) e exclusão em `receipts/{userId}/{receiptId}/{fileName}`.
+   - O documento no Firestore persiste unicamente metadados estruturados (`id`, `storagePath`, `fileName`, `contentType`, `size`, `uploadedAt`).
+   - Implementação de fluxos de compensação automática caso uma operação no Firestore ou Storage falhe.
+
+6. **História 6 – Validar esquema e autorização das regras Firestore**
+   - Atualização de `firestore.rules` com validação de esquema estrita (allowlist de campos, tipos, limites de tamanho e valores monetários positivos).
+   - Proibição de propriedades inesperadas e bloqueio contra campos Base64/dataUri no recibo.
+   - Garantia de imutabilidade do `userId` em atualizações e isolamento por `request.auth.uid`.
+   - Configuração do emulador Firestore em `firebase.json` e criação da suíte de testes de regras (`tests/firestore-rules.test.cjs`).
+
+7. **História 7 – Proteger a persistência nativa da sessão Firebase**
+   - Instalação e integração do `expo-secure-store` (~57.0.3).
+   - Implementação de `secure-auth-persistence.ts`, que provê ao `getReactNativePersistence` operações apoiadas no Keychain (iOS) e Keystore/EncryptedSharedPreferences (Android).
+   - Suporte a segmentação (*chunking*) para tokens e credenciais maiores sem risco de rejeição nativa e sem fallback inseguro para `AsyncStorage`.
+   - Preservação de `browserLocalPersistence` na web.
+
 ## Estrutura de arquivos
 
 ```
 src/
-├── app/              # Rotas e telas principais
-├── components/       # Componentes reutilizáveis
-├── constants/        # Constantes da aplicação
-├── contexts/         # Context API (app, auth, transactions)
-├── hooks/            # Hooks customizados
-├── services/         # Configuração e serviços do Firebase
-├── types/            # Tipos TypeScript
-└── global.css        # Estilos globais
+├── app/                          # Rotas e navegação da aplicação (Expo Router)
+│   ├── (app)/                    # Grupo de rotas autenticadas (Tabs com lazy loading)
+│   ├── dashboard-screen.tsx      # Tela de Meu Patrimônio (Dashboard)
+│   └── login.tsx                 # Rota pública de login/cadastro
+├── components/                   # Componentes reutilizáveis (Header, Search, Temas, etc.)
+├── constants/                    # Tema de cores e configurações
+├── contexts/                     # Contextos globais (App)
+├── features/                     # Recursos organizados por contexto de negócio:
+│   ├── FinancialAnalytics/       # Análises financeiras, cards e gráficos
+│   ├── TransactionsList/         # Módulo de transações (Clean Architecture)
+│   │   ├── domain/               # Camada de Domínio: entidades, use-cases e contratos
+│   │   ├── data/                 # Repositórios concretos Firestore, Storage e Cache
+│   │   ├── di/                   # Composição e injeção de dependências (Container)
+│   │   ├── contexts/             # Reducer, estado reativo e hooks segregados
+│   │   ├── components/           # Componentes visuais (listagem, modal, seletor de fotos)
+│   │   └── screens/              # Telas da lista de transações
+│   └── UserProfile/              # Perfil do usuário, autenticação e login
+├── hooks/                        # Custom hooks
+├── services/                     # Configurações do Firebase, autenticação segura e notificações
+├── types/                        # Tipos e fachadas de tipos TypeScript
+└── global.css                    # Estilos globais
+```
+
+## Testes e validações automatizadas
+
+A aplicação conta com suítes de testes unitários executadas pelo test runner nativo do Node.js:
+
+```bash
+# Executa todos os 50 testes automatizados
+npm test
+
+# Executa testes específicos
+node --test tests/transaction-use-cases.test.cjs
+node --test tests/auth-persistence.test.cjs
+node --test tests/firestore-transaction-repository.test.cjs
+node --test tests/transactions-reducer.test.cjs
+node --test tests/transaction-memory-cache.test.cjs
+node --test tests/receipt-storage.test.cjs
+node --test tests/firestore-rules.test.cjs
+npm run test:settings
+
+# Validação completa de qualidade (lint + typecheck + export web)
+npm run validate
 ```
 
 ## Perfil, tema e notificações

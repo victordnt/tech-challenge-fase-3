@@ -1,9 +1,11 @@
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { LoginModal } from "@/features/UserProfile/components/login-modal";
 import { Colors } from "@/constants/theme";
+import { LoginModal } from "@/features/UserProfile/components/login-modal";
 import { useAuth } from "@/features/UserProfile/contexts/auth-context";
-import { View } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Redirect } from "expo-router";
+import React from "react";
+import { StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function LoginScreen() {
   const colorScheme = (useColorScheme() || "light") as "light" | "dark";
@@ -13,16 +15,23 @@ export default function LoginScreen() {
   if (user) return <Redirect href="/(app)" />;
 
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: theme.background,
-      }}
+    <SafeAreaView
+      style={[
+        styles.safeArea,
+        { backgroundColor: theme.background },
+      ]}
+      edges={["top", "bottom", "left", "right"]}
     >
       <LoginModal
         onSignIn={sign("in")("/(app)")}
         onSignUp={sign("up")("/(app)")}
       />
-    </View>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+});

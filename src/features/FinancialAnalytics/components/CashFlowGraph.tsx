@@ -76,7 +76,7 @@ export default function CashFlowGraph({
       ]}
     >
       <View style={styles.chartHeader}>
-        <Text style={[styles.chartTitle, { color: theme.textSecondary }]}>
+        <Text style={[styles.chartTitle, { color: theme.text }]}>
           Fluxo de caixa
         </Text>
       </View>
@@ -109,7 +109,7 @@ export default function CashFlowGraph({
             y1="20"
             x2="330"
             y2="20"
-            stroke="rgba(255, 255, 255, 0.05)"
+            stroke={theme.border}
             strokeDasharray="3 3"
           />
 
@@ -127,7 +127,7 @@ export default function CashFlowGraph({
             y1="75"
             x2="330"
             y2="75"
-            stroke="rgba(255, 255, 255, 0.05)"
+            stroke={theme.border}
             strokeDasharray="3 3"
           />
 
@@ -196,7 +196,7 @@ export default function CashFlowGraph({
         </View>
       </View>
 
-      <View style={styles.legendContainer}>
+      <View style={[styles.legendContainer, { borderTopColor: theme.border }]}>
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: "#D2BBFF" }]} />
           <Text style={[styles.legendText, { color: theme.textSecondary }]}>

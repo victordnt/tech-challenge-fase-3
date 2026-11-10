@@ -89,7 +89,7 @@ export default function CategoriesGraph({
             cx="80"
             cy="80"
             r="50"
-            stroke="rgba(255, 255, 255, 0.05)"
+            stroke={theme.border}
             strokeWidth="12"
             fill="none"
           />
@@ -115,7 +115,7 @@ export default function CategoriesGraph({
 
         {/* Overlay do Texto perfeitamente centralizado via Flexbox nativo */}
         <View style={styles.donutCenterOverlay} pointerEvents="none">
-          <Text style={[styles.donutLabel, { color: theme.text }]}>
+          <Text style={[styles.donutLabel, { color: theme.textSecondary }]}>
             Total saídas
           </Text>
           <Text style={[styles.donutValue, { color: theme.text }]}>
@@ -131,7 +131,7 @@ export default function CategoriesGraph({
       <View style={styles.categoriesList}>
         {categoryList.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={{ color: "#94A3B8", fontSize: 13 }}>
+            <Text style={{ color: theme.textSecondary, fontSize: 13 }}>
               Nenhuma saída registrada no período
             </Text>
           </View>

@@ -3,7 +3,6 @@ import React from "react";
 import { Redirect, Tabs } from "expo-router";
 import { AppHeader } from "@/components/header";
 import { useTheme } from "@/hooks/use-theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { SymbolView } from "expo-symbols";
 import { ActivityIndicator, View } from "react-native";
 import { useAuth } from "@/features/UserProfile/contexts/auth-context";
@@ -11,8 +10,6 @@ import { useAuth } from "@/features/UserProfile/contexts/auth-context";
 export default function AppLayout() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
   const { user, loading } = useAuth();
 
   if (loading)
@@ -36,14 +33,14 @@ export default function AppLayout() {
         headerShown: true,
         header: () => <AppHeader />,
         tabBarStyle: {
-          backgroundColor: isDark ? "#1E1E20" : "#FFFFFF",
-          borderTopColor: isDark ? "#2E2E33" : "#E5E5E5",
+          backgroundColor: theme.backgroundElement,
+          borderTopColor: theme.border,
           height: 80 + insets.bottom,
           paddingBottom: insets.bottom + 12,
           paddingTop: 8,
         },
-        tabBarActiveTintColor: theme.primary || "#8A56FF",
-        tabBarInactiveTintColor: isDark ? "#94A3B8" : "#64748B",
+        tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: theme.textSecondary,
         tabBarShowLabel: true,
         tabBarLabelStyle: { fontSize: 11, lineHeight: 16 },
       }}
@@ -82,6 +79,7 @@ export default function AppLayout() {
         name="stats"
         options={{
           title: "Análises",
+          lazy: true,
           tabBarIcon: ({ color }) => (
             <SymbolView
               name={{

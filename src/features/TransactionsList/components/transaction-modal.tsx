@@ -2,7 +2,8 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { PhotoPicker } from "@/features/TransactionsList/components/photo-picker";
 import { PhotoPreviewModal } from "@/features/TransactionsList/components/photo-preview-modal";
-import { useTransactions } from "@/features/TransactionsList/contexts/transactions-context";
+import { useTransactionsActions } from "@/features/TransactionsList/contexts/transactions-context";
+import { firebaseReceiptStorage } from "@/features/TransactionsList/data/repositories/firebase-receipt-storage";
 import type {
   Receipt,
   Transaction,
@@ -26,7 +27,6 @@ import {
 } from "react-native";
 
 import { FIXED_CATEGORIES } from "@/features/TransactionsList/constants/categories";
-import { createReceipt } from "@/services/firebase/receipt-service";
 import { SymbolView } from "expo-symbols";
 import Animated, { SlideInDown, SlideOutDown } from "react-native-reanimated";
 
@@ -44,7 +44,7 @@ export function TransactionModal({
   const theme = useTheme();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-  const { addTransaction, updateTransaction } = useTransactions();
+  const { addTransaction, updateTransaction } = useTransactionsActions();
   const { user } = useAuth();
 
   const [type, setType] = useState<"income" | "expense">("income");
@@ -53,6 +53,7 @@ export function TransactionModal({
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [photo, setPhoto] = useState<string | null>(null);
+  const [initialPhotoUri, setInitialPhotoUri] = useState<string | null>(null);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -68,19 +69,6 @@ export function TransactionModal({
     return `${day}/${month}/${year}`;
   };
 
-  const getReceiptUri = (receipt: Receipt | null | undefined) => {
-    const value = receipt?.dataUri || receipt?.url;
-    if (!value) return null;
-    if (
-      value.startsWith("data:") ||
-      value.startsWith("http://") ||
-      value.startsWith("https://") ||
-      value.startsWith("file://")
-    )
-      return value;
-    return `data:${receipt?.contentType || "image/jpeg"};base64,${value}`;
-  };
-
   const resetForm = () => {
     setFormError(null);
     setType("income");
@@ -89,28 +77,54 @@ export function TransactionModal({
     setDescription("");
     setDate(new Date().toISOString().slice(0, 10));
     setPhoto(null);
+    setInitialPhotoUri(null);
     setShowCategoryDropdown(false);
   };
 
   // Inicializar campos ao abrir ou ao editar uma transação
   useEffect(() => {
-    if (editingTransaction) {
-      const timer = setTimeout(() => {
+    let isMounted = true;
+    const timer = setTimeout(() => {
+      if (!isMounted) return;
+      if (editingTransaction) {
         setType(editingTransaction.type as "income" | "expense");
         setAmount(editingTransaction.amount.toString());
         setCategory(editingTransaction.category || FIXED_CATEGORIES[0]);
         setDescription(editingTransaction.description);
         setDate(editingTransaction.date.slice(0, 10));
-        setPhoto(getReceiptUri(editingTransaction.receipt));
         setShowCategoryDropdown(false);
-      }, 0);
-      return () => clearTimeout(timer);
-    } else {
-      const timer = setTimeout(() => {
+
+        if (editingTransaction.receipt?.storagePath) {
+          firebaseReceiptStorage
+            .getReceiptUrl(editingTransaction.receipt.storagePath)
+            .then((resolvedUrl) => {
+              if (isMounted) {
+                setPhoto(resolvedUrl);
+                setInitialPhotoUri(resolvedUrl);
+              }
+            })
+            .catch(() => {
+              if (isMounted) {
+                setPhoto(null);
+                setInitialPhotoUri(null);
+              }
+            });
+        } else if (editingTransaction.receipt?.url) {
+          setPhoto(editingTransaction.receipt.url);
+          setInitialPhotoUri(editingTransaction.receipt.url);
+        } else {
+          setPhoto(null);
+          setInitialPhotoUri(null);
+        }
+      } else {
         resetForm();
-      }, 0);
-      return () => clearTimeout(timer);
-    }
+      }
+    }, 0);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
   }, [editingTransaction, visible]);
 
   const handleSubmit = async () => {
@@ -151,11 +165,17 @@ export function TransactionModal({
       const receiptId = `receipt-${timestamp}-${randomPart}`;
       const finalDescription = description.trim() || category.trim();
       const existingReceipt = editingTransaction?.receipt || null;
-      const photoChanged = Boolean(photo && photo !== existingReceipt?.url);
+      const photoChanged = Boolean(photo && photo !== initialPhotoUri);
       let nextReceipt: Receipt | null = existingReceipt;
+      let newlyUploadedReceipt: Receipt | null = null;
 
       if (photoChanged && photo) {
-        nextReceipt = createReceipt(photo, receiptId);
+        newlyUploadedReceipt = await firebaseReceiptStorage.uploadReceipt(
+          user.uid,
+          receiptId,
+          photo,
+        );
+        nextReceipt = newlyUploadedReceipt;
       } else if (!photo) {
         nextReceipt = null;
       }
@@ -175,7 +195,24 @@ export function TransactionModal({
         } else {
           await addTransaction(transactionData);
         }
+
+        // Se a operação foi bem-sucedida e o recibo anterior foi substituído ou removido, deletar objeto antigo do Storage
+        if (
+          existingReceipt?.storagePath &&
+          (photoChanged || !photo) &&
+          existingReceipt.storagePath !== nextReceipt?.storagePath
+        ) {
+          await firebaseReceiptStorage
+            .deleteReceipt(existingReceipt.storagePath)
+            .catch(() => undefined);
+        }
       } catch (saveError) {
+        // Compensação: se o salvamento no Firestore falhar, remover o recibo recém-enviado
+        if (newlyUploadedReceipt?.storagePath) {
+          await firebaseReceiptStorage
+            .deleteReceipt(newlyUploadedReceipt.storagePath)
+            .catch(() => undefined);
+        }
         throw saveError;
       }
 
@@ -683,6 +720,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 15,
+    ...Platform.select({
+      web: {
+        outlineStyle: "none",
+        outlineWidth: 0,
+        boxShadow: "none",
+      } as any,
+    }),
   },
   descriptionInput: {
     paddingVertical: 12,
