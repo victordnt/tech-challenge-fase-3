@@ -14,7 +14,7 @@ import { SymbolView } from "expo-symbols";
 
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
-import { useTransactions } from "@/features/TransactionsList/contexts/transactions-context";
+import { useTransactionsState } from "@/features/TransactionsList/contexts/transactions-context";
 import CashFlowGraph from "../components/CashFlowGraph";
 import CategoriesGraph from "../components/CategoriesGraph";
 
@@ -22,7 +22,7 @@ export default function StatsScreen() {
   const colorScheme = useColorScheme();
   const validColorScheme = colorScheme === "dark" ? "dark" : "light";
   const colors = Colors[validColorScheme];
-  const { transactions, loading } = useTransactions();
+  const { transactions, loading } = useTransactionsState();
   const [selectedFilter, setSelectedFilter] = useState("Mês");
   const filterOptions = ["Semana", "Mês", "Ano"];
 
@@ -166,12 +166,12 @@ export default function StatsScreen() {
                     styles.badge,
                     selectedFilter === option
                       ? {
-                          backgroundColor: "#7C3AED",
+                          backgroundColor: colors.primary,
                           borderColor: "transparent",
                         }
                       : {
-                          backgroundColor: "#272A2C",
-                          borderColor: "#2E2E33",
+                          backgroundColor: colors.backgroundElement,
+                          borderColor: colors.border,
                           borderWidth: 1,
                         },
                   ]}
@@ -181,7 +181,7 @@ export default function StatsScreen() {
                       styles.badgeText,
                       selectedFilter === option
                         ? { color: "#FFFFFF" }
-                        : { color: "#94A3B8" },
+                        : { color: colors.textSecondary },
                     ]}
                   >
                     {option}
@@ -194,10 +194,11 @@ export default function StatsScreen() {
 
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#8A56FF" />
+            <ActivityIndicator size="large" color={colors.primary} />
             <ThemedText
               type="small"
-              style={{ color: "#94A3B8", marginTop: 12 }}
+              themeColor="textSecondary"
+              style={{ marginTop: 12 }}
             >
               Carregando análises do Firebase...
             </ThemedText>
@@ -244,7 +245,15 @@ export default function StatsScreen() {
                 </View>
 
                 {/* Card 2 */}
-                <View style={styles.card}>
+                <View
+                  style={[
+                    styles.card,
+                    {
+                      backgroundColor: colors.backgroundElement,
+                      borderColor: colors.border,
+                    },
+                  ]}
+                >
                   <View style={styles.cardHeader}>
                     <SymbolView
                       name={statsCards[1].iconName as any}
@@ -274,7 +283,15 @@ export default function StatsScreen() {
 
               <View style={styles.row}>
                 {/* Card 3 */}
-                <View style={styles.card}>
+                <View
+                  style={[
+                    styles.card,
+                    {
+                      backgroundColor: colors.backgroundElement,
+                      borderColor: colors.border,
+                    },
+                  ]}
+                >
                   <View style={styles.cardHeader}>
                     <SymbolView
                       name={statsCards[2].iconName as any}
@@ -302,7 +319,15 @@ export default function StatsScreen() {
                 </View>
 
                 {/* Card 4 */}
-                <View style={styles.card}>
+                <View
+                  style={[
+                    styles.card,
+                    {
+                      backgroundColor: colors.backgroundElement,
+                      borderColor: colors.border,
+                    },
+                  ]}
+                >
                   <View style={styles.cardHeader}>
                     <SymbolView
                       name={statsCards[3].iconName as any}
@@ -391,9 +416,7 @@ const styles = StyleSheet.create({
   card: {
     minWidth: 0,
     flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 24,
     padding: 16,
     justifyContent: "space-between",
@@ -412,12 +435,10 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     fontSize: 14,
     fontWeight: "500",
-    color: "#CCC3D8",
   },
   cardValue: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#E0E3E5",
   },
   cardSubtext: {
     fontSize: 12,

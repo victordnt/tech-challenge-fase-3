@@ -2,14 +2,50 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isValidReceipt(receipt) {
+      return receipt == null || (
+        receipt is map
+        && receipt.keys().hasOnly(['id', 'storagePath', 'fileName', 'contentType', 'size', 'uploadedAt'])
+        && receipt.keys().hasAll(['id', 'storagePath', 'fileName', 'contentType'])
+        && receipt.id is string && receipt.id.size() > 0
+        && receipt.storagePath is string && receipt.storagePath.matches('^receipts/' + request.auth.uid + '/.*')
+        && receipt.fileName is string && receipt.fileName.size() > 0
+        && receipt.contentType is string && receipt.contentType.matches('^image/.*')
+        && (!('size' in receipt) || (receipt.size is number && receipt.size <= 5 * 1024 * 1024))
+        && (!('uploadedAt' in receipt) || receipt.uploadedAt is string)
+      );
+    }
+    
+    function isValidTransaction(data) {
+      return data.keys().hasOnly(['userId', 'type', 'amount', 'category', 'description', 'date', 'receipt', 'createdAt', 'updatedAt'])
+        && data.keys().hasAll(['userId', 'type', 'amount', 'category', 'description', 'date'])
+        && data.userId is string && data.userId == request.auth.uid
+        && data.type in ['income', 'expense']
+        && data.amount is number && data.amount > 0
+        && data.category is string && data.category.size() >= 1 && data.category.size() <= 100
+        && data.description is string && data.description.size() <= 500
+        && data.date is string && data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && (!('receipt' in data) || isValidReceipt(data.receipt));
+    }
+    
     match /transactions/{transactionId} {
-      allow create: if request.auth != null
-        && request.resource.data.userId == request.auth.uid;
-      allow read, delete: if request.auth != null
-        && resource.data.userId == request.auth.uid;
-      allow update: if request.auth != null
-        && resource.data.userId == request.auth.uid
-        && request.resource.data.userId == request.auth.uid;
+      allow read: if isOwner(resource.data.userId);
+      allow delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId)
+        && isValidTransaction(request.resource.data)
+        && ('createdAt' in request.resource.data && request.resource.data.createdAt is timestamp);
+      allow update: if isOwner(resource.data.userId)
+        && isOwner(request.resource.data.userId)
+        && isValidTransaction(request.resource.data);
     }
   }
 }

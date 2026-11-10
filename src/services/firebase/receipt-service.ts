@@ -1,28 +1,32 @@
 import type { Receipt } from "@/features/TransactionsList/types/finance";
+import { firebaseReceiptStorage } from "@/features/TransactionsList/data/repositories/firebase-receipt-storage";
 
-const extensionFromType = (contentType: string) =>
-  contentType.split("/")[1]?.replace("jpeg", "jpg") || "jpg";
+export async function uploadReceiptFile(
+  userId: string,
+  receiptId: string,
+  fileUri: string,
+  fileName?: string,
+): Promise<Receipt> {
+  return firebaseReceiptStorage.uploadReceipt(userId, receiptId, fileUri, {
+    fileName,
+  });
+}
 
-const MAX_RECEIPT_DATA_URI_LENGTH = 700_000;
+export async function resolveReceiptUrl(storagePath: string): Promise<string> {
+  return firebaseReceiptStorage.getReceiptUrl(storagePath);
+}
 
+export async function removeReceiptFile(storagePath: string): Promise<void> {
+  return firebaseReceiptStorage.deleteReceipt(storagePath);
+}
+
+// Deprecated helper kept for backwards compatibility if needed
 export function createReceipt(dataUri: string, receiptId: string): Receipt {
-  const match = dataUri.match(/^data:(image\/[\w.+-]+);base64,/);
-  if (!match) throw new Error("O anexo precisa ser uma imagem válida.");
-  if (dataUri.length > MAX_RECEIPT_DATA_URI_LENGTH) {
-    throw new Error("A imagem é grande demais para salvar no Firestore.");
-  }
-
-  const contentType = match[1];
-  const fileName = `recibo.${extensionFromType(contentType)}`;
-  const base64 = dataUri.slice(match[0].length);
-  const size = Math.floor((base64.length * 3) / 4);
-
   return {
     id: receiptId,
-    url: dataUri,
-    fileName,
-    contentType,
-    size,
+    url: "",
+    fileName: "recibo.jpg",
+    contentType: "image/jpeg",
     uploadedAt: new Date().toISOString(),
   };
 }

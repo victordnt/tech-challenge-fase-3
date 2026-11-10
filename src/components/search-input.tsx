@@ -8,7 +8,6 @@ import {
   SearchIcon,
 } from "@gluestack-ui/themed";
 import { useTheme } from "@/hooks/use-theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 
 interface SearchInputProps {
   value: string;
@@ -24,12 +23,10 @@ export function SearchInput({
   style,
 }: SearchInputProps) {
   const colors = useTheme();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
 
-  const inputBgColor = isDark ? "#272A2C" : "#E8EBF5";
-  const textAndIconColor = isDark ? "#CCC3D8" : "#6B7280";
-  const borderOutlineColor = isDark ? "#6B7280" : "#D1D5DB";
+  const inputBgColor = colors.backgroundSelected;
+  const textAndIconColor = colors.textSecondary;
+  const borderOutlineColor = colors.border;
 
   return (
     <Input
@@ -82,5 +79,12 @@ const styles = StyleSheet.create({
     height: "100%",
     paddingVertical: 0,
     fontFamily: Platform.OS === "ios" ? "System" : "sans-serif",
+    ...Platform.select({
+      web: {
+        outlineStyle: "none",
+        outlineWidth: 0,
+        boxShadow: "none",
+      } as any,
+    }),
   },
 });

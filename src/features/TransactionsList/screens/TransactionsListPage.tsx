@@ -20,7 +20,10 @@ import { Colors } from "@/constants/theme";
 import { TransactionButton } from "@/features/TransactionsList/components/transaction-button";
 import { TransactionList } from "@/features/TransactionsList/components/transaction-list";
 import { TransactionModal } from "@/features/TransactionsList/components/transaction-modal";
-import { useTransactions } from "@/features/TransactionsList/contexts/transactions-context";
+import {
+  useTransactionsActions,
+  useTransactionsState,
+} from "@/features/TransactionsList/contexts/transactions-context";
 import type { Transaction } from "@/features/TransactionsList/types/finance";
 
 export default function TransactionsListPage() {
@@ -28,15 +31,8 @@ export default function TransactionsListPage() {
   const validColorScheme = colorScheme === "dark" ? "dark" : "light";
   const colors = Colors[validColorScheme];
 
-  const {
-    transactions,
-    loading,
-    error,
-    deleteTransaction,
-    hasMore,
-    loadMore,
-    retry,
-  } = useTransactions();
+  const { transactions, loading, error, hasMore } = useTransactionsState();
+  const { deleteTransaction, loadMore, retry } = useTransactionsActions();
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -146,7 +142,11 @@ export default function TransactionsListPage() {
                   placeholderTextColor={colors.textSecondary}
                   style={[
                     styles.dateInput,
-                    { color: colors.text, borderColor: colors.border },
+                    {
+                      backgroundColor: colors.backgroundElement,
+                      color: colors.text,
+                      borderColor: colors.border,
+                    },
                   ]}
                   maxLength={10}
                 />
@@ -157,7 +157,11 @@ export default function TransactionsListPage() {
                   placeholderTextColor={colors.textSecondary}
                   style={[
                     styles.dateInput,
-                    { color: colors.text, borderColor: colors.border },
+                    {
+                      backgroundColor: colors.backgroundElement,
+                      color: colors.text,
+                      borderColor: colors.border,
+                    },
                   ]}
                   maxLength={10}
                 />
@@ -165,7 +169,13 @@ export default function TransactionsListPage() {
             ) : (
               <>
                 <TouchableOpacity
-                  style={[styles.dateInput, { borderColor: colors.border }]}
+                  style={[
+                    styles.dateInput,
+                    {
+                      backgroundColor: colors.backgroundElement,
+                      borderColor: colors.border,
+                    },
+                  ]}
                   onPress={() => setDatePicker("start")}
                 >
                   <ThemedText
@@ -177,7 +187,13 @@ export default function TransactionsListPage() {
                   </ThemedText>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.dateInput, { borderColor: colors.border }]}
+                  style={[
+                    styles.dateInput,
+                    {
+                      backgroundColor: colors.backgroundElement,
+                      borderColor: colors.border,
+                    },
+                  ]}
                   onPress={() => setDatePicker("end")}
                 >
                   <ThemedText
@@ -234,7 +250,7 @@ export default function TransactionsListPage() {
                       styles.badge,
                       selectedFilter === option
                         ? {
-                            backgroundColor: "#7C3AED",
+                            backgroundColor: colors.primary,
                             borderColor: "transparent",
                           }
                         : {
@@ -248,7 +264,7 @@ export default function TransactionsListPage() {
                       style={[
                         styles.badgeText,
                         selectedFilter === option
-                          ? { color: "#EDE0FF" }
+                          ? { color: "#FFFFFF" }
                           : { color: colors.textSecondary },
                       ]}
                     >
@@ -283,10 +299,11 @@ export default function TransactionsListPage() {
           ) : null}
           {loading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#8A56FF" />
+              <ActivityIndicator size="large" color={colors.primary} />
               <ThemedText
                 type="small"
-                style={{ color: "#94A3B8", marginTop: 12 }}
+                themeColor="textSecondary"
+                style={{ marginTop: 12 }}
               >
                 Carregando transações do Firebase...
               </ThemedText>
@@ -299,7 +316,10 @@ export default function TransactionsListPage() {
             />
           )}
           {!loading && hasMore ? (
-            <TouchableOpacity style={styles.loadMoreButton} onPress={loadMore}>
+            <TouchableOpacity
+              style={[styles.loadMoreButton, { backgroundColor: colors.primary }]}
+              onPress={loadMore}
+            >
               <ThemedText style={styles.loadMoreText}>Carregar mais</ThemedText>
             </TouchableOpacity>
           ) : null}
@@ -349,6 +369,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
+    ...Platform.select({
+      web: {
+        outlineStyle: "none",
+        outlineWidth: 0,
+        boxShadow: "none",
+      } as any,
+    }),
   },
   loadMoreButton: {
     alignSelf: "center",

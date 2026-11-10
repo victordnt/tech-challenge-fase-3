@@ -10,3 +10,22 @@
     sans-serif;
   --font-serif: Georgia, "Times New Roman", serif;
 }
+
+/* Reset universal de outline para inputs web (elimina borda/retângulo padrão do navegador) */
+input,
+textarea,
+select,
+[role="textbox"],
+[contenteditable="true"] {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+input:focus,
+textarea:focus,
+select:focus,
+[role="textbox"]:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+

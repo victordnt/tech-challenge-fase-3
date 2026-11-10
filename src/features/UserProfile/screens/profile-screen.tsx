@@ -631,5 +631,12 @@ const styles = StyleSheet.create({
     minHeight: 50,
     padding: 14,
     fontSize: 16,
+    ...Platform.select({
+      web: {
+        outlineStyle: "none",
+        outlineWidth: 0,
+        boxShadow: "none",
+      } as any,
+    }),
   },
 });
